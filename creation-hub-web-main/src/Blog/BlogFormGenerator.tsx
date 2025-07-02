@@ -9,7 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronUp, Calendar, Tag, Link, User, FileText, Search, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, Calendar, Tag, Link, User, FileText, Search, Clock, ArrowLeft } from 'lucide-react';
 import { DatePicker } from './DatePicker';
 import { TagInput } from './TagInput';
 import { URLInput } from './URLInput';
@@ -48,9 +48,10 @@ interface BlogFormGeneratorNextData extends BlogFormData {
 export interface BlogFormGeneratorProps {
   onNext: (data: BlogFormGeneratorNextData) => void;
   initialFormData?: any;
+  onBack?: () => void;
 }
 
-const BlogFormGenerator = ({ onNext, initialFormData }: BlogFormGeneratorProps) => {
+const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGeneratorProps) => {
   const [formData, setFormData] = useState<BlogFormData>(
     initialFormData || {
       title: '',
@@ -631,6 +632,17 @@ const BlogFormGenerator = ({ onNext, initialFormData }: BlogFormGeneratorProps) 
           <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
             <CardContent className="pt-6">
               <div className="flex flex-wrap gap-4 justify-center">
+                {onBack && (
+                  <Button
+                    onClick={onBack}
+                    variant="outline"
+                    className="border-gray-300 text-gray-600 hover:bg-gray-50 px-6 py-3 inline-flex items-center gap-2"
+                    size="lg"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Dashboard
+                  </Button>
+                )}
                 <Button
                   onClick={() => handleSubmit('generate')}
                   className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-medium shadow-lg"
