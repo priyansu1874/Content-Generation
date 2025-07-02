@@ -175,6 +175,12 @@ const Dashboard = () => {
   };
 
   const handleTileClick = (tileName: string, tilePath: string) => {
+    // Special handling for website blog - go directly to form
+    if (tileName === 'Website Blog') {
+      navigate('/content/website-blog');
+      return;
+    }
+    
     // Convert tile name to content type key
     const contentTypeKey = tileName.toLowerCase().replace(/\s+/g, '-');
     setSelectedContentType(contentTypeKey);

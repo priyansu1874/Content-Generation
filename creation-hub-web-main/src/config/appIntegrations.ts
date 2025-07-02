@@ -10,30 +10,6 @@ export interface AppIntegration {
 }
 
 export const appIntegrations: Record<string, AppIntegration[]> = {
-  'website-blog': [
-    {
-      name: 'Content Craft Form',
-      type: 'external',
-      url: 'http://localhost:8081',
-      description: 'Create blog posts with Content Craft Form',
-      icon: 'edit',
-      requiresAuth: false
-    },
-    {
-      name: 'WordPress',
-      type: 'external',
-      url: 'http://localhost:8081/',
-      description: 'Create blog posts in WordPress',
-      icon: 'wordpress',
-      requiresAuth: true
-    },
-    {
-      name: 'Internal Editor',
-      type: 'internal',
-      description: 'Use our built-in blog editor',
-      icon: 'edit'
-    }
-  ],
   'linkedin-post': [
     {
       name: 'LinkedIn Direct',
