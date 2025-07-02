@@ -8,6 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Upload, X } from 'lucide-react';
+import BlogFormGenerator from '../Blog/BlogFormGenerator';
+import FinalPrompt from '../Blog/FinalPrompt';
+import ContentValidation from '../Blog/ContentValidation';
 
 const ContentForm = () => {
   const { type } = useParams();
@@ -15,6 +18,12 @@ const ContentForm = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  
+  // Blog workflow states
+  const [blogStep, setBlogStep] = useState<'form' | 'prompt' | 'validation'>('form');
+  const [blogFormData, setBlogFormData] = useState<any>(null);
+  const [finalPrompt, setFinalPrompt] = useState<string>('');
+  
   const [formData, setFormData] = useState({
     title: '',
     instruction: '',
@@ -55,6 +64,30 @@ const ContentForm = () => {
       'thought-leadership': 'Thought Leadership'
     };
     return titles[type || ''] || 'Content Form';
+  };
+
+  // Blog workflow handlers
+  const handleBlogFormNext = (data: any) => {
+    setBlogFormData(data);
+    setBlogStep('prompt');
+  };
+
+  const handleBlogPromptBack = () => {
+    setBlogStep('form');
+  };
+
+  const handleBlogPromptSubmit = (prompt: string) => {
+    setFinalPrompt(prompt);
+    setBlogStep('validation');
+  };
+
+  const handleBlogValidationBack = () => {
+    setBlogStep('prompt');
+  };
+
+  const handleBlogPost = () => {
+    toast({ title: 'Blog posted successfully!' });
+    navigate('/dashboard');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -164,6 +197,74 @@ const ContentForm = () => {
       </div>
     );
   };
+
+  // If it's a website blog, render the blog workflow
+  if (type === 'website-blog') {
+    switch (blogStep) {
+      case 'form':
+        return (
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center gap-4 mb-6">
+              <Button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+              <h1 className="text-3xl font-bold text-gray-900">Website Blog</h1>
+            </div>
+            <BlogFormGenerator onNext={handleBlogFormNext} initialFormData={blogFormData} />
+          </div>
+        );
+      case 'prompt':
+        return (
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center gap-4 mb-6">
+              <Button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+              <h1 className="text-3xl font-bold text-gray-900">Website Blog - Final Prompt</h1>
+            </div>
+            <FinalPrompt
+              onBack={handleBlogPromptBack}
+              onSubmitForApproval={handleBlogPromptSubmit}
+              formData={blogFormData}
+            />
+          </div>
+        );
+      case 'validation':
+        return (
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center gap-4 mb-6">
+              <Button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+              <h1 className="text-3xl font-bold text-gray-900">Website Blog - Content Validation</h1>
+            </div>
+            <ContentValidation
+              onBack={handleBlogValidationBack}
+              onPost={handleBlogPost}
+              prompt={finalPrompt}
+            />
+          </div>
+        );
+      default:
+        return (
+          <div className="max-w-4xl mx-auto">
+            <BlogFormGenerator onNext={handleBlogFormNext} initialFormData={blogFormData} />
+          </div>
+        );
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
