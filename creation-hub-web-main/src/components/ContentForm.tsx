@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import BlogWorkflow from '@/Blog/BlogWorkflow';
 import LinkedInAutomationForm from '@/LinkedIn/LinkedInAutomationForm';
+import TechnicalArticleWorkflow from '@/TechnicalArticle/TechnicalArticleWorkflow';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -20,6 +21,9 @@ const ContentForm = () => {
       
       case 'linkedin-post':
         return <LinkedInAutomationForm onBack={handleBack} />;
+      
+      case 'technical-article':
+        return <TechnicalArticleWorkflow onBack={handleBack} />;
       
       default:
         return (

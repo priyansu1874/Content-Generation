@@ -175,7 +175,7 @@ const Dashboard = () => {
   };
 
   const handleTileClick = (tileName: string, tilePath: string) => {
-    // Special handling for website blog and LinkedIn post - go directly to form
+    // Special handling for website blog, LinkedIn post, and Technical Article - go directly to form
     if (tileName === 'Website Blog') {
       navigate('/content/website-blog');
       return;
@@ -183,6 +183,11 @@ const Dashboard = () => {
     
     if (tileName === 'LinkedIn Post') {
       navigate('/content/linkedin-post');
+      return;
+    }
+    
+    if (tileName === 'Technical Article') {
+      navigate('/content/technical-article');
       return;
     }
     

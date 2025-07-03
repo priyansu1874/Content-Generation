@@ -42,22 +42,7 @@ export const appIntegrations: Record<string, AppIntegration[]> = {
       icon: 'convertkit'
     }
   ],
-  'technical-article': [
-    {
-      name: 'Medium',
-      type: 'external',
-      url: 'https://medium.com/new-story',
-      description: 'Publish on Medium',
-      icon: 'medium'
-    },
-    {
-      name: 'Dev.to',
-      type: 'external',
-      url: 'https://dev.to/new',
-      description: 'Publish on Dev.to',
-      icon: 'devto'
-    }
-  ],
+
   'facebook-post': [
     {
       name: 'Facebook Creator Studio',
