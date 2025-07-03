@@ -10,22 +10,6 @@ export interface AppIntegration {
 }
 
 export const appIntegrations: Record<string, AppIntegration[]> = {
-  'linkedin-post': [
-    {
-      name: 'LinkedIn Direct',
-      type: 'external',
-      url: 'https://www.linkedin.com/feed/',
-      description: 'Post directly to LinkedIn',
-      icon: 'linkedin'
-    },
-    {
-      name: 'Buffer',
-      type: 'external',
-      url: 'https://buffer.com/compose',
-      description: 'Schedule LinkedIn posts with Buffer',
-      icon: 'buffer'
-    }
-  ],
   'newsletter': [
     {
       name: 'Mailchimp',
@@ -42,7 +26,6 @@ export const appIntegrations: Record<string, AppIntegration[]> = {
       icon: 'convertkit'
     }
   ],
-
   'facebook-post': [
     {
       name: 'Facebook Creator Studio',

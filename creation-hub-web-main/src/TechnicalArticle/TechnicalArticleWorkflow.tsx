@@ -93,7 +93,6 @@ const TechnicalArticleWorkflowContent: React.FC<TechnicalArticleWorkflowProps> =
           <InputDetailsForm 
             onSubmit={handleFormSubmit}
             initialData={formData}
-            onBack={onBack}
           />
         )}
         

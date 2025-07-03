@@ -6,8 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Heading1, Heading2, Heading3, Heading4 } from '@/components/typography';
-import AppSelector from '@/components/AppSelector';
-import { AppIntegration } from '@/config/appIntegrations';
 import { 
   Globe, 
   Linkedin, 
@@ -41,8 +39,6 @@ const Dashboard = () => {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [content, setContent] = useState<ContentItem[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [showAppSelector, setShowAppSelector] = useState(false);
-  const [selectedContentType, setSelectedContentType] = useState<string>('');
 
   const tiles = [
     { name: 'Website Blog', icon: Globe, path: '/content/website-blog', gradient: 'from-blue-500 to-cyan-500' },
@@ -175,44 +171,8 @@ const Dashboard = () => {
   };
 
   const handleTileClick = (tileName: string, tilePath: string) => {
-    // Special handling for website blog, LinkedIn post, and Technical Article - go directly to form
-    if (tileName === 'Website Blog') {
-      navigate('/content/website-blog');
-      return;
-    }
-    
-    if (tileName === 'LinkedIn Post') {
-      navigate('/content/linkedin-post');
-      return;
-    }
-    
-    if (tileName === 'Technical Article') {
-      navigate('/content/technical-article');
-      return;
-    }
-    
-    // Convert tile name to content type key
-    const contentTypeKey = tileName.toLowerCase().replace(/\s+/g, '-');
-    setSelectedContentType(contentTypeKey);
-    setShowAppSelector(true);
-  };
-
-  const handleAppSelection = (integration: AppIntegration) => {
-    setShowAppSelector(false);
-    
-    if (integration.type === 'external' && integration.url) {
-      // Open external app in new tab
-      window.open(integration.url, '_blank');
-    } else if (integration.type === 'internal') {
-      // Navigate to internal form
-      const contentType = selectedContentType;
-      navigate(`/content/${contentType}`);
-    }
-  };
-
-  const handleAppSelectorCancel = () => {
-    setShowAppSelector(false);
-    setSelectedContentType('');
+    // All tiles now go directly to their respective forms
+    navigate(tilePath);
   };
 
   return (
@@ -466,15 +426,6 @@ const Dashboard = () => {
           ) : null}
         </div>
       </div>
-
-      {/* App Selector Modal */}
-      {showAppSelector && (
-        <AppSelector
-          contentType={selectedContentType}
-          onSelect={handleAppSelection}
-          onCancel={handleAppSelectorCancel}
-        />
-      )}
     </div>
   );
 };

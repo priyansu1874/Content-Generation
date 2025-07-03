@@ -6,16 +6,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { X, Upload, Image as ImageIcon, ArrowLeft } from 'lucide-react';
+import { X, Upload, Image as ImageIcon } from 'lucide-react';
 import type { FormData } from './types/article';
 
 interface InputDetailsFormProps {
   onSubmit: (data: FormData) => void;
   initialData: FormData;
-  onBack?: () => void;
 }
 
-const InputDetailsForm: React.FC<InputDetailsFormProps> = ({ onSubmit, initialData, onBack }) => {
+const InputDetailsForm: React.FC<InputDetailsFormProps> = ({ onSubmit, initialData }) => {
   const [formData, setFormData] = useState<FormData>(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -266,19 +265,7 @@ const InputDetailsForm: React.FC<InputDetailsFormProps> = ({ onSubmit, initialDa
             )}
           </div>
 
-          <div className="flex justify-between pt-6">
-            {onBack && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="lg" 
-                onClick={onBack}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Dashboard
-              </Button>
-            )}
+          <div className="flex justify-end pt-6">
             <Button type="submit" size="lg" className="bg-blue-500 hover:bg-blue-600 flex items-center gap-2" disabled={isSubmitting}>
               {isSubmitting && (
                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
