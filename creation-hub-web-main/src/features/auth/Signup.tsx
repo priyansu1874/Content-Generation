@@ -1,14 +1,13 @@
-
 import React from 'react';
 import Layout from '@/core/layouts/Layout';
 import AuthForm from '@/features/auth/AuthForm';
 
-const ForgotPassword = () => {
+const Signup = () => {
   return (
     <Layout showHeader={false}>
-      <AuthForm type="forgot" />
+      <AuthForm type="signup" />
     </Layout>
   );
 };
 
-export default ForgotPassword;
+export default Signup;

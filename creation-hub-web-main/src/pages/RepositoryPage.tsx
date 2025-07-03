@@ -1,7 +1,7 @@
 
 import React from 'react';
-import Layout from '@/components/Layout';
-import ContentRepository from '@/components/ContentRepository';
+import Layout from '@/core/layouts/Layout';
+import ContentRepository from '@/features/content-repository/ContentRepository';
 
 const RepositoryPage = () => {
   return (

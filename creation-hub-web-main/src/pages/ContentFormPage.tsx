@@ -1,7 +1,7 @@
 
 import React from 'react';
-import Layout from '@/components/Layout';
-import ContentForm from '@/components/ContentForm';
+import Layout from '@/core/layouts/Layout';
+import ContentForm from '@/core/routing/ContentForm';
 
 const ContentFormPage = () => {
   return (

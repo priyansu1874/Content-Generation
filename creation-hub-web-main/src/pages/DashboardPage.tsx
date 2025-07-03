@@ -1,7 +1,7 @@
 
 import React from 'react';
-import Layout from '@/components/Layout';
-import Dashboard from '@/components/Dashboard';
+import Layout from '@/core/layouts/Layout';
+import Dashboard from '@/features/dashboard/Dashboard';
 
 const DashboardPage = () => {
   return (

@@ -1,7 +1,7 @@
 
 import React from 'react';
-import Layout from '@/components/Layout';
-import AuthForm from '@/components/AuthForm';
+import Layout from '@/core/layouts/Layout';
+import AuthForm from '@/features/auth/AuthForm';
 
 const Signup = () => {
   return (
