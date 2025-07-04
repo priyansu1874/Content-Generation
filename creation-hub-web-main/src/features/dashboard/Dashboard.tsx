@@ -46,7 +46,7 @@ const Dashboard = () => {
     { name: 'Newsletter', icon: Mail, path: '/content/newsletter', gradient: 'from-green-500 to-emerald-500' },
     { name: 'Technical Article', icon: FileText, path: '/content/technical-article', gradient: 'from-purple-500 to-purple-700' },
     { name: 'Facebook Post', icon: Facebook, path: '/content/facebook-post', gradient: 'from-blue-500 to-indigo-600' },
-    { name: 'Carousel', icon: Image, path: '/content/carousel', gradient: 'from-pink-500 to-rose-500' },
+    { name: 'Carousel', icon: Image, path: '/carousel', gradient: 'from-pink-500 to-rose-500' },
     { name: 'Twitter Post', icon: Twitter, path: '/content/twitter-post', gradient: 'from-sky-400 to-sky-600' },
     { name: 'Thought Leadership', icon: Brain, path: '/content/thought-leadership', gradient: 'from-violet-500 to-purple-600' },
   ];

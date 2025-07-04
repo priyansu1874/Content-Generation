@@ -11,6 +11,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import DashboardPage from "./pages/DashboardPage";
 import ContentFormPage from "./pages/ContentFormPage";
 import RepositoryPage from "./pages/RepositoryPage";
+import CarouselPage from "./pages/CarouselPage";
 import ProtectedRoute from "./core/routing/ProtectedRoute";
 import NotFound from "./core/routing/NotFound";
 
@@ -35,6 +36,11 @@ const App = () => (
           <Route path="/content/:type" element={
             <ProtectedRoute>
               <ContentFormPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/carousel/*" element={
+            <ProtectedRoute>
+              <CarouselPage />
             </ProtectedRoute>
           } />
           <Route path="/repository" element={
