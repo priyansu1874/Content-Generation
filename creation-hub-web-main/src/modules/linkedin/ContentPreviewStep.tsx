@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/shared/components/ui/card';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
 import { ThumbsUp, MessageCircle, Repeat2, Send } from 'lucide-react';
 import type { FormData } from './LinkedInAutomationForm';
+import { useLinkedInFormContext } from './LinkedInFormContext';
 
 export interface ContentPreviewStepProps {
   formData: FormData;
@@ -11,8 +12,15 @@ export interface ContentPreviewStepProps {
 }
 
 const ContentPreviewStep = ({ formData, onPrev }: ContentPreviewStepProps) => {
+  const { setComingFromValidation } = useLinkedInFormContext();
+  
   // Replace with your actual LinkedIn webhook URL
   const N8N_LINKEDIN_WEBHOOK_URL = "https://n8n.getondataconsulting.in/webhook/likedinPost";
+
+  const handleBackToPromptEditor = () => {
+    setComingFromValidation(true);
+    onPrev();
+  };
 
   const handlePostToLinkedIn = async () => {
     try {
@@ -124,20 +132,38 @@ const ContentPreviewStep = ({ formData, onPrev }: ContentPreviewStepProps) => {
         </Card>
       </div>
 
-      <div className="flex justify-between pt-4">
-        <Button 
-          onClick={onPrev} 
-          variant="outline"
-          className="px-6 py-2"
-        >
-          ← Back to Prompt Editor
-        </Button>
-        <Button 
-          onClick={handlePostToLinkedIn}
-          className="px-8 py-2 bg-green-600 hover:bg-green-700 text-white"
-        >
-          Post to LinkedIn ✅
-        </Button>
+      <div className="pt-4">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm mb-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="text-sm font-semibold text-gray-900 mb-1">Generate Status:</div>
+              <div className="text-sm font-medium text-green-600">
+                Content ready for posting
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-gray-900 mb-1">Next Step:</div>
+              <div className="text-sm text-gray-600">
+                Review content and post to LinkedIn
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <Button 
+            onClick={handleBackToPromptEditor} 
+            variant="outline"
+            className="px-8 py-2"
+          >
+            ← Back to Prompt Editor
+          </Button>
+          <Button 
+            onClick={handlePostToLinkedIn}
+            className="px-8 py-2 bg-green-600 hover:bg-green-700 text-white"
+          >
+            Post to LinkedIn ✅
+          </Button>
+        </div>
       </div>
     </div>
   );

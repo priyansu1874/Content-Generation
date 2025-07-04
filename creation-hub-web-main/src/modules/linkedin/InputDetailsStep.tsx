@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/shared/components/ui/radio-group';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Upload, Link, X, ArrowLeft } from 'lucide-react';
 import type { FormData } from './LinkedInAutomationForm';
+import { useLinkedInFormContext } from './LinkedInFormContext';
 
 interface InputDetailsStepProps {
   formData: FormData;
@@ -19,6 +20,17 @@ interface InputDetailsStepProps {
 const InputDetailsStep = ({ formData, updateFormData, onNext, onBack }: InputDetailsStepProps) => {
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Smart button logic
+  const { 
+    hasGeneratedOnce, 
+    hasFormDataChanged, 
+    markAsGenerated,
+    lastGeneratedPrompt,
+    generatedPrompt,
+    clearGeneratedContent
+  } = useLinkedInFormContext();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = event.target.files;
@@ -70,10 +82,63 @@ const InputDetailsStep = ({ formData, updateFormData, onNext, onBack }: InputDet
     return basicFieldsValid && companyNameValid && personaValid;
   };
 
+  // Smart button logic functions
+  const isGenerateEnabled = () => {
+    if (!isFormValid()) return false;
+    if (isGenerating) return false;
+    
+    // If we have generated before, check if form data has changed
+    if (hasGeneratedOnce) {
+      return hasFormDataChanged();
+    }
+    
+    // First time generation - enable if form is valid
+    return true;
+  };
+
+  // Smart button logic for Next Page button
+  const isNextEnabled = () => {
+    if (!hasGeneratedOnce || !formData.finalPrompt.trim()) return false;
+    if (hasFormDataChanged()) return false;
+    return true;
+  };
+
+  const getGenerateButtonStatus = () => {
+    if (!isFormValid()) return "Please fill in all required fields";
+    if (isGenerating) return "Generating prompt...";
+    
+    if (hasGeneratedOnce) {
+      const formChanged = hasFormDataChanged();
+      
+      if (!formChanged) {
+        return "Prompt already generated with current inputs - change inputs to regenerate";
+      } else {
+        return "Form inputs changed - ready to generate new prompt";
+      }
+    }
+    
+    return "Ready to generate prompt";
+  };
+
+  const getNextButtonStatus = () => {
+    if (!hasGeneratedOnce) return "Generate prompt first";
+    if (!formData.finalPrompt.trim()) return "No prompt generated yet";
+    if (hasFormDataChanged()) return "Generate new prompt first (inputs changed)";
+    return "Ready to proceed to prompt editor";
+  };
+
   // Replace with your actual n8n webhook URL
   const N8N_WEBHOOK_URL = "https://n8n.getondataconsulting.in/webhook/createPrompt";
 
   const handleGeneratePrompt = async () => {
+    if (!isGenerateEnabled()) return;
+    
+    // If form data has changed, clear any existing generated content first
+    if (hasGeneratedOnce && hasFormDataChanged()) {
+      clearGeneratedContent();
+    }
+    
+    setIsGenerating(true);
     try {
       updateFormData({ finalPrompt: "" });
       let body;
@@ -117,10 +182,21 @@ const InputDetailsStep = ({ formData, updateFormData, onNext, onBack }: InputDet
       } else {
         prompt = String(data); // fallback for debugging
       }
-      updateFormData({ finalPrompt: prompt });
+      
+      // Clear any existing generated content since we're generating a new prompt
+      updateFormData({ 
+        finalPrompt: prompt,
+        approvalResponse: '' // Clear old content when prompt changes
+      });
+      
+      // Mark as generated for smart button logic
+      markAsGenerated(prompt, formData);
+      
       onNext();
     } catch (error) {
       alert("Error generating prompt. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -407,24 +483,59 @@ const InputDetailsStep = ({ formData, updateFormData, onNext, onBack }: InputDet
         )}
       </div>
 
-      <div className="flex justify-between pt-4">
-        {onBack && (
-          <Button 
-            onClick={onBack} 
-            variant="outline"
-            className="px-6 py-2 inline-flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Button>
+      <div className="pt-4">
+        {hasGeneratedOnce && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm mb-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="text-sm font-semibold text-gray-900 mb-1">Generate Status:</div>
+                <div className={`text-sm font-medium ${
+                  hasFormDataChanged() 
+                    ? "text-orange-600" 
+                    : "text-green-600"
+                }`}>
+                  {hasFormDataChanged() ? "Ready to generate prompt" : "Prompt generated"}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-900 mb-1">Next Step:</div>
+                <div className="text-sm text-gray-600">
+                  {hasFormDataChanged() ? "Generate new prompt first (inputs changed)" : "Review and edit the generated prompt"}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
-        <Button 
-          onClick={handleGeneratePrompt} 
-          disabled={!isFormValid()}
-          className="px-8 py-2 bg-blue-600 hover:bg-blue-700 ml-auto"
-        >
-          Generate Prompt
-        </Button>
+        <div className="flex justify-between items-center">
+          {onBack && (
+            <Button 
+              onClick={onBack} 
+              variant="outline"
+              className="px-8 py-2 inline-flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Button>
+          )}
+          <div className="flex gap-3">
+            <Button 
+              onClick={handleGeneratePrompt} 
+              disabled={!isGenerateEnabled()}
+              className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+              title={getGenerateButtonStatus()}
+            >
+              {isGenerating ? "Generating..." : hasGeneratedOnce && !hasFormDataChanged() ? "Regenerate Prompt" : "Generate Prompt"}
+            </Button>
+            <Button 
+              onClick={onNext}
+              disabled={!isNextEnabled()}
+              className="px-8 py-2 bg-green-600 hover:bg-green-700 text-white"
+              title={getNextButtonStatus()}
+            >
+              Next Page →
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

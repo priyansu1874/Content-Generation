@@ -4,6 +4,7 @@ import StepIndicator from './StepIndicator';
 import InputDetailsStep from './InputDetailsStep';
 import PromptEditorStep from './PromptEditorStep';
 import ContentPreviewStep from './ContentPreviewStep';
+import { LinkedInFormProvider, useLinkedInFormContext } from './LinkedInFormContext';
 
 export interface FormData {
   title: string;
@@ -33,30 +34,16 @@ interface LinkedInAutomationFormProps {
   initialFormData?: FormData | null;
 }
 
-const LinkedInAutomationForm = ({ onBack, onPost, initialFormData }: LinkedInAutomationFormProps) => {
+const LinkedInAutomationFormInner = ({ onBack, onPost, initialFormData }: LinkedInAutomationFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>(
-    initialFormData || {
-      title: '',
-      description: '',
-      specialInstructions: '',
-      tone: 'Professional',
-      targetAudience: '',
-      postAs: 'individual',
-      companyName: '',
-      mediaOption: 'none',
-      mediaUrl: '',
-      includeCTA: 'no',
-      includeAnalytics: 'no',
-      includeHashtags: 'no',
-      persona: 'Founder',
-      postLength: 'Medium',
-      postType: 'Text',
-      finalPrompt: '',
-      generatedContent: '',
-      approvalResponse: ''
+  const { formData, setFormData } = useLinkedInFormContext();
+
+  // Initialize form data if provided
+  useState(() => {
+    if (initialFormData) {
+      setFormData(initialFormData);
     }
-  );
+  });
 
   const updateFormData = (updates: Partial<FormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -126,6 +113,14 @@ What's your experience with this? Share your thoughts below! 👇
         </div>
       </Card>
     </div>
+  );
+};
+
+const LinkedInAutomationForm = (props: LinkedInAutomationFormProps) => {
+  return (
+    <LinkedInFormProvider>
+      <LinkedInAutomationFormInner {...props} />
+    </LinkedInFormProvider>
   );
 };
 
