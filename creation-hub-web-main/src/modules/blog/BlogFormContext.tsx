@@ -131,7 +131,7 @@ export const BlogFormProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!lastGeneratedFormData || !formData) return true;
     
     // Compare all relevant form fields that affect prompt generation
-    return (
+    const hasChanged = (
       formData.title !== lastGeneratedFormData.title ||
       formData.targetAudience !== lastGeneratedFormData.targetAudience ||
       formData.primaryGoal !== lastGeneratedFormData.primaryGoal ||
@@ -154,6 +154,8 @@ export const BlogFormProvider: React.FC<{ children: ReactNode }> = ({ children }
       formData.includeQuotes !== lastGeneratedFormData.includeQuotes ||
       formData.finalPrompt !== lastGeneratedFormData.finalPrompt
     );
+
+    return hasChanged;
   };
 
   const contextValue: BlogFormContextType = {

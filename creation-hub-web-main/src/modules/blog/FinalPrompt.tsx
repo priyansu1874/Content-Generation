@@ -24,6 +24,8 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
   const [finalPrompt, setFinalPrompt] = useState('');
   const [promptLines, setPromptLines] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastGeneratedPromptText, setLastGeneratedPromptText] = useState(''); // Track last generated prompt
+  const [hasClickedGenerate, setHasClickedGenerate] = useState(false); // Track if generate was clicked
 
   // Smart button logic
   const blogFormContext = useBlogForm();
@@ -80,62 +82,52 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
       setFinalPrompt(cleaned + bodyText);
     }
   }, [formData]);
-  console.log("responne", formData?.webhookResponse);
+  
+  // Initialize state if we have existing content
+  useEffect(() => {
+    if (formData?.webhookResponse?.trim() && finalPrompt.trim() && !hasClickedGenerate) {
+      setHasClickedGenerate(true);
+      setLastGeneratedPromptText(finalPrompt.trim());
+    }
+  }, [formData?.webhookResponse, finalPrompt, hasClickedGenerate]);
 
   // Smart button logic functions
   const isGenerateEnabled = () => {
     if (!finalPrompt.trim() || isGenerating) return false;
     
-    if (hasGeneratedOnce) {
-      // Enable if form data changed OR prompt text changed OR no final content generated yet
-      const contextFormData = blogFormContext.formData;
-      return hasFormDataChanged() || 
-             finalPrompt.trim() !== lastGeneratedPrompt.trim() || 
-             !contextFormData?.webhookResponse?.trim();
-    }
+    // If we haven't clicked generate yet, enable the button
+    if (!hasClickedGenerate) return true;
     
-    return true;
+    // If we have clicked generate, only enable if prompt has changed
+    const promptChanged = finalPrompt.trim() !== lastGeneratedPromptText.trim();
+    return promptChanged;
   };
 
   // Smart button logic for Next Page button  
   const isNextEnabled = () => {
-    // Enable Next if we have generated content and form data hasn't changed
-    if (!hasGeneratedOnce) return false;
-    const contextFormData = blogFormContext.formData;
-    if (!contextFormData?.webhookResponse?.trim()) return false;
-    if (hasFormDataChanged()) return false;
-    return true;
+    // Enable Next if we have clicked generate and have content
+    return hasClickedGenerate && formData?.webhookResponse?.trim();
   };
 
   const getGenerateButtonStatus = () => {
     if (!finalPrompt.trim()) return "Please enter a prompt";
     if (isGenerating) return "Generating content...";
     
-    if (hasGeneratedOnce) {
-      const formChanged = hasFormDataChanged();
-      const promptChanged = finalPrompt.trim() !== lastGeneratedPrompt.trim();
-      const contextFormData = blogFormContext.formData;
-      const hasContent = contextFormData?.webhookResponse?.trim();
-      
-      if (!formChanged && !promptChanged && hasContent) {
-        return "Content already generated with current inputs - change inputs or prompt to regenerate";
-      } else if (formChanged) {
-        return "Form inputs changed - ready to generate new content";
-      } else if (promptChanged) {
-        return "Prompt changed - ready to generate new content";
-      } else if (!hasContent) {
-        return "Ready to generate content";
-      }
+    if (!hasClickedGenerate) {
+      return "Ready to generate content";
     }
     
-    return "Ready to generate content";
+    const promptChanged = finalPrompt.trim() !== lastGeneratedPromptText.trim();
+    if (promptChanged) {
+      return "Prompt changed - ready to generate content";
+    } else {
+      return "Content already generated with current prompt - change prompt to regenerate";
+    }
   };
 
   const getNextButtonStatus = () => {
-    if (!hasGeneratedOnce) return "Generate content first";
-    const contextFormData = blogFormContext.formData;
-    if (!contextFormData?.webhookResponse?.trim()) return "No content generated yet";
-    if (hasFormDataChanged()) return "Generate new content first (inputs changed)";
+    if (!hasClickedGenerate) return "Generate content first";
+    if (!formData?.webhookResponse?.trim()) return "No content generated yet";
     return "Ready to preview content";
   };
 
@@ -143,6 +135,8 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
     if (!isGenerateEnabled()) return;
 
     setIsGenerating(true);
+    setHasClickedGenerate(true); // Mark that generate was clicked
+    
     try {
       const res = await fetch('https://priyansu4781.app.n8n.cloud/webhook/83037732-608c-4f27-9b81-04c49daae6d9', {
         method: 'POST',
@@ -158,17 +152,19 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
       // Mark as generated for smart button logic
       markAsGenerated(finalPrompt, formData);
       
+      // Save the prompt text that was used for generation
+      setLastGeneratedPromptText(finalPrompt.trim());
+      
       onSubmitForApproval?.(data);
       
-      // Navigate to the next page if onNext is provided
-      if (onNext) {
-        onNext();
-      }
+      // Don't automatically navigate - let user click Next Page button
       
     } catch {
       const errorData = { ...formData, finalPrompt, webhookResponse: 'Error: Failed to get response from webhook.' };
       blogFormContext.setFormData(errorData);
       setFinalPrompt('Error: Failed to get response from webhook.');
+      // Save the prompt text even on error
+      setLastGeneratedPromptText(finalPrompt.trim());
     } finally {
       setIsGenerating(false);
     }
@@ -226,7 +222,7 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
                 value={finalPrompt}
                 onChange={e => {
                   setFinalPrompt(e.target.value);
-                  // Update the context as well to ensure sync
+                  // Update the context to ensure sync
                   if (blogFormContext.formData) {
                     blogFormContext.setFormData({ ...blogFormContext.formData, finalPrompt: e.target.value });
                   }
@@ -236,21 +232,21 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
             </div>
 
             <div className="pt-4">
-              {hasGeneratedOnce && (
+              {hasClickedGenerate && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm mb-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="text-sm font-semibold text-gray-900 mb-1">Generate Status:</div>
                       <div className={`text-sm font-medium ${
-                        finalPrompt.trim() !== lastGeneratedPrompt.trim() || hasFormDataChanged()
+                        finalPrompt.trim() !== lastGeneratedPromptText.trim()
                           ? "text-orange-600" 
-                          : blogFormContext.formData?.webhookResponse
+                          : formData?.webhookResponse?.trim()
                           ? "text-green-600"
                           : "text-blue-600"
                       }`}>
-                        {blogFormContext.formData?.webhookResponse 
+                        {formData?.webhookResponse?.trim()
                           ? "Content generated" 
-                          : finalPrompt.trim() !== lastGeneratedPrompt.trim() || hasFormDataChanged()
+                          : finalPrompt.trim() !== lastGeneratedPromptText.trim()
                           ? "Ready to generate content"
                           : "Ready to generate content"
                         }
@@ -259,11 +255,11 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
                     <div>
                       <div className="text-sm font-semibold text-gray-900 mb-1">Next Step:</div>
                       <div className="text-sm text-gray-600">
-                        {blogFormContext.formData?.webhookResponse 
+                        {formData?.webhookResponse?.trim()
                           ? "Review and approve the generated content"
-                          : finalPrompt.trim() !== lastGeneratedPrompt.trim() || hasFormDataChanged()
-                          ? "Generate new content first (inputs changed)"
-                          : "Generate content to proceed"
+                          : finalPrompt.trim() !== lastGeneratedPromptText.trim()
+                          ? "Generate new content with updated prompt"
+                          : "Change prompt to generate new content"
                         }
                       </div>
                     </div>
