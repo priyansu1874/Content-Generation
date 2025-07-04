@@ -13,6 +13,7 @@ import { ChevronDown, ChevronUp, Calendar, Tag, Link, User, FileText, Search, Cl
 import { DatePicker } from './DatePicker';
 import { TagInput } from './TagInput';
 import { URLInput } from './URLInput';
+import { useBlogForm } from './BlogFormContext';
 
 interface BlogFormData {
   title: string;
@@ -82,6 +83,18 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
   );
   const [customPrimaryGoal, setCustomPrimaryGoal] = useState('');
   const [customToneOfVoice, setCustomToneOfVoice] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Smart button logic
+  const blogFormContext = useBlogForm();
+  const { 
+    hasGeneratedOnce, 
+    hasFormDataChanged, 
+    markAsGenerated,
+    lastGeneratedPrompt,
+    generatedPrompt,
+    clearGeneratedContent
+  } = blogFormContext;
 
   const [openSections, setOpenSections] = useState({
     basic: true,
@@ -93,6 +106,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
   useEffect(() => {
     if (initialFormData) {
       setFormData(initialFormData);
+      blogFormContext.setFormData(initialFormData);
 
       // Restore customPrimaryGoal if needed
       if (
@@ -100,7 +114,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
         !['educate', 'inform', 'entertain', 'convert', ''].includes(initialFormData.primaryGoal)
       ) {
         setCustomPrimaryGoal(initialFormData.primaryGoal);
-        setFormData(prev => ({ ...prev, primaryGoal: 'custom' }));
+        updateFormData({ primaryGoal: 'custom' });
       } else {
         setCustomPrimaryGoal('');
       }
@@ -111,7 +125,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
         !['professional', 'casual', 'technical', 'storytelling', 'humorous', ''].includes(initialFormData.toneOfVoice)
       ) {
         setCustomToneOfVoice(initialFormData.toneOfVoice);
-        setFormData(prev => ({ ...prev, toneOfVoice: 'custom' }));
+        updateFormData({ toneOfVoice: 'custom' });
       } else {
         setCustomToneOfVoice('');
       }
@@ -135,16 +149,90 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
   };
 
   const handleTitleChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       title: value,
       slug: generateSlug(value)
-    }));
+    };
+    setFormData(newFormData);
+    // Update blog form context
+    blogFormContext.setFormData(newFormData);
+  };
+
+  // Smart form update function that syncs with context
+  const updateFormData = (updates: Partial<BlogFormData>) => {
+    const newFormData = { ...formData, ...updates };
+    setFormData(newFormData);
+    blogFormContext.setFormData(newFormData);
+  };
+
+  // Form validation - only title is required
+  const isFormValid = () => {
+    return formData.title.trim() !== '';
+  };
+
+  // Smart button logic functions
+  const isGenerateEnabled = () => {
+    if (!isFormValid()) return false;
+    if (isGenerating) return false;
+    
+    // If we have generated before, check if form data has changed
+    if (hasGeneratedOnce) {
+      return hasFormDataChanged();
+    }
+    
+    // First time generation - enable if form is valid
+    return true;
+  };
+
+  // Smart button logic for Next Page button
+  const isNextEnabled = () => {
+    if (!hasGeneratedOnce) return false;
+    if (hasFormDataChanged()) return false;
+    
+    // Check if we have a webhook response in the context form data
+    const contextFormData = blogFormContext.formData;
+    return contextFormData?.webhookResponse?.trim() ? true : false;
+  };
+
+  const getGenerateButtonStatus = () => {
+    if (!isFormValid()) return "Please enter a blog title";
+    if (isGenerating) return "Generating prompt...";
+    
+    if (hasGeneratedOnce) {
+      const formChanged = hasFormDataChanged();
+      
+      if (!formChanged) {
+        return "Prompt already generated with current inputs - change inputs to regenerate";
+      } else {
+        return "Form inputs changed - ready to generate new prompt";
+      }
+    }
+    
+    return "Ready to generate prompt";
+  };
+
+  // Handle next button click
+  const handleNextClick = () => {
+    if (!isNextEnabled()) return;
+    
+    const contextFormData = blogFormContext.formData;
+    if (contextFormData && onNext) {
+      onNext(contextFormData);
+    }
+  };
+
+  const getNextButtonStatus = () => {
+    if (!hasGeneratedOnce) return "Generate prompt first";
+    const contextFormData = blogFormContext.formData;
+    if (!contextFormData?.webhookResponse?.trim()) return "No content generated yet";
+    if (hasFormDataChanged()) return "Generate new content first (inputs changed)";
+    return "Ready to proceed to final prompt";
   };
 
   const handleSubmit = async (action: 'generate' | 'clear') => {
     if (action === 'clear') {
-      setFormData({
+      const clearData = {
         title: '',
         slug: '',
         author: 'Current User',
@@ -169,39 +257,65 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
         template: '',
         language: 'english',
         includeQuotes: false,
-      });
+      };
+      setFormData(clearData);
+      blogFormContext.setFormData(clearData);
       setCustomPrimaryGoal('');
+      setCustomToneOfVoice('');
       return;
     }
 
-    // Use customPrimaryGoal if "custom" is selected
-    const submitData = {
-      ...formData,
-      primaryGoal: formData.primaryGoal === 'custom' ? customPrimaryGoal : formData.primaryGoal,
-      toneOfVoice: formData.toneOfVoice === 'custom' ? customToneOfVoice : formData.toneOfVoice,
-    };
+    if (!isGenerateEnabled()) return;
 
-    if (action === 'generate') {
-      try {
-        const response = await fetch('https://priyansu4781.app.n8n.cloud/webhook/669ff8d0-1c76-4361-a74b-c64accb29d7f', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(submitData),
-        });
-        const data = await response.text();
-        if (onNext) {
-          onNext({ ...submitData, webhookResponse: typeof data === 'string' ? data : '' });
-        }
-      } catch (error) {
-        console.error('Failed to send form data:', error);
-        if (onNext) {
-          onNext({ ...submitData, webhookResponse: 'Error: Failed to get response from webhook.' });
-        }
+    // If form data has changed, clear any existing generated content first
+    if (hasGeneratedOnce && hasFormDataChanged()) {
+      clearGeneratedContent();
+    }
+
+    setIsGenerating(true);
+    try {
+      // Use customPrimaryGoal if "custom" is selected
+      const submitData = {
+        ...formData,
+        primaryGoal: formData.primaryGoal === 'custom' ? customPrimaryGoal : formData.primaryGoal,
+        toneOfVoice: formData.toneOfVoice === 'custom' ? customToneOfVoice : formData.toneOfVoice,
+      };
+
+      const response = await fetch('https://priyansu4781.app.n8n.cloud/webhook/669ff8d0-1c76-4361-a74b-c64accb29d7f', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitData),
+      });
+      const data = await response.text();
+      
+      const finalData = { ...submitData, webhookResponse: typeof data === 'string' ? data : '' };
+      
+      // Update the blog form context with the generated data
+      blogFormContext.setFormData(finalData);
+      
+      // Mark as generated for smart button logic
+      markAsGenerated(data, submitData);
+      
+      if (onNext) {
+        onNext(finalData);
       }
-    } else {
-      console.log(`${action} blog with data:`, submitData);
+      
+    } catch (error) {
+      console.error('Failed to send form data:', error);
+      const errorData = {
+        ...formData,
+        primaryGoal: formData.primaryGoal === 'custom' ? customPrimaryGoal : formData.primaryGoal,
+        toneOfVoice: formData.toneOfVoice === 'custom' ? customToneOfVoice : formData.toneOfVoice,
+        webhookResponse: 'Error: Failed to get response from webhook.'
+      };
+      blogFormContext.setFormData(errorData);
+      if (onNext) {
+        onNext(errorData);
+      }
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -249,7 +363,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                         id="slug"
                         placeholder="url-friendly-slug"
                         value={formData.slug}
-                        onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                        onChange={(e) => updateFormData({ slug: e.target.value })}
                         className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
                       />
                     </div>
@@ -257,7 +371,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
 
                   {/* Hidden fields - keeping in state but not showing in UI */}
                   <div className="hidden">
-                    <Select value={formData.author} onValueChange={(value) => setFormData(prev => ({ ...prev, author: value }))}>
+                    <Select value={formData.author} onValueChange={(value) => updateFormData({ author: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -267,9 +381,9 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                     </Select>
                     <DatePicker
                       selected={formData.publishDate}
-                      onSelect={(date) => setFormData(prev => ({ ...prev, publishDate: date }))}
+                      onSelect={(date) => updateFormData({ publishDate: date })}
                     />
-                    <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+                    <Select value={formData.status} onValueChange={(value) => updateFormData({ status: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -279,11 +393,11 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                     </Select>
                     <TagInput
                       tags={formData.categories}
-                      onChange={(tags) => setFormData(prev => ({ ...prev, categories: tags }))}
+                      onChange={(tags) => updateFormData({ categories: tags })}
                     />
                     <TagInput
                       tags={formData.tags}
-                      onChange={(tags) => setFormData(prev => ({ ...prev, tags: tags }))}
+                      onChange={(tags) => updateFormData({ tags: tags })}
                     />
                   </div>
                 </CardContent>
@@ -315,7 +429,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                       <Input
                         placeholder="e.g., Developers, Small business owners..."
                         value={formData.targetAudience}
-                        onChange={(e) => setFormData(prev => ({ ...prev, targetAudience: e.target.value }))}
+                        onChange={(e) => updateFormData({ targetAudience: e.target.value })}
                         className="border-gray-200 focus:border-green-500 focus:ring-green-500/20"
                       />
                     </div>
@@ -331,9 +445,9 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                         }
                         onValueChange={(value) => {
                           if (value === 'custom') {
-                            setFormData(prev => ({ ...prev, primaryGoal: 'custom' }));
+                            updateFormData({ primaryGoal: 'custom' });
                           } else {
-                            setFormData(prev => ({ ...prev, primaryGoal: value }));
+                            updateFormData({ primaryGoal: value });
                             setCustomPrimaryGoal('');
                           }
                         }}
@@ -373,9 +487,9 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                         }
                         onValueChange={(value) => {
                           if (value === 'custom') {
-                            setFormData(prev => ({ ...prev, toneOfVoice: 'custom' }));
+                            updateFormData({ toneOfVoice: 'custom' });
                           } else {
-                            setFormData(prev => ({ ...prev, toneOfVoice: value }));
+                            updateFormData({ toneOfVoice: value });
                             setCustomToneOfVoice('');
                           }
                         }}
@@ -403,7 +517,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-700">Word Count Range</Label>
-                      <Select value={formData.wordCountRange} onValueChange={(value) => setFormData(prev => ({ ...prev, wordCountRange: value }))}>
+                      <Select value={formData.wordCountRange} onValueChange={(value) => updateFormData({ wordCountRange: value })}>
                         <SelectTrigger className="border-gray-200">
                           <SelectValue placeholder="Select word count" />
                         </SelectTrigger>
@@ -424,7 +538,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                       id="cta"
                       placeholder="e.g., Subscribe to newsletter, Contact us, Read more..."
                       value={formData.callToAction}
-                      onChange={(e) => setFormData(prev => ({ ...prev, callToAction: e.target.value }))}
+                      onChange={(e) => updateFormData({ callToAction: e.target.value })}
                       className="border-gray-200 focus:border-green-500 focus:ring-green-500/20"
                     />
                   </div>
@@ -433,7 +547,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                     <Label className="text-sm font-medium text-gray-700">Reference URLs</Label>
                     <URLInput
                       urls={formData.referenceUrls}
-                      onChange={(urls) => setFormData(prev => ({ ...prev, referenceUrls: urls }))}
+                      onChange={(urls) => updateFormData({ referenceUrls: urls })}
                       placeholder="Add reference URLs..."
                     />
                   </div>
@@ -444,7 +558,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                       id="outline"
                       placeholder="• Key point 1&#10;• Key point 2&#10;• Key point 3..."
                       value={formData.outline}
-                      onChange={(e) => setFormData(prev => ({ ...prev, outline: e.target.value }))}
+                      onChange={(e) => updateFormData({ outline: e.target.value })}
                       className="border-gray-200 focus:border-green-500 focus:ring-green-500/20 min-h-[120px]"
                     />
                   </div>
@@ -479,7 +593,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                         id="seoTitle"
                         placeholder="SEO-optimized title for search engines"
                         value={formData.seoTitle}
-                        onChange={(e) => setFormData(prev => ({ ...prev, seoTitle: e.target.value }))}
+                        onChange={(e) => updateFormData({ seoTitle: e.target.value })}
                         className="border-gray-200 focus:border-purple-500 focus:ring-purple-500/20"
                       />
                     </div>
@@ -487,7 +601,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                       <Label className="text-sm font-medium text-gray-700">Focus Keywords</Label>
                       <TagInput
                         tags={formData.focusKeywords}
-                        onChange={(tags) => setFormData(prev => ({ ...prev, focusKeywords: tags }))}
+                        onChange={(tags) => updateFormData({ focusKeywords: tags })}
                         placeholder="Add SEO keywords..."
                       />
                     </div>
@@ -502,7 +616,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                       id="metaDescription"
                       placeholder="Brief description for search engine results..."
                       value={formData.metaDescription}
-                      onChange={(e) => setFormData(prev => ({ ...prev, metaDescription: e.target.value }))}
+                      onChange={(e) => updateFormData({ metaDescription: e.target.value })}
                       className="border-gray-200 focus:border-purple-500 focus:ring-purple-500/20"
                       maxLength={160}
                     />
@@ -516,7 +630,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                       <Label className="text-sm font-medium text-gray-700">Internal Links</Label>
                       <URLInput
                         urls={formData.internalLinks}
-                        onChange={(urls) => setFormData(prev => ({ ...prev, internalLinks: urls }))}
+                        onChange={(urls) => updateFormData({ internalLinks: urls })}
                         placeholder="Add internal links..."
                       />
                     </div>
@@ -524,7 +638,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                       <Label className="text-sm font-medium text-gray-700">External Links</Label>
                       <URLInput
                         urls={formData.externalLinks}
-                        onChange={(urls) => setFormData(prev => ({ ...prev, externalLinks: urls }))}
+                        onChange={(urls) => updateFormData({ externalLinks: urls })}
                         placeholder="Add external links..."
                       />
                     </div>
@@ -536,7 +650,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                       id="imageSuggestions"
                       placeholder="Keywords for image suggestions or describe desired images..."
                       value={formData.imageSuggestions}
-                      onChange={(e) => setFormData(prev => ({ ...prev, imageSuggestions: e.target.value }))}
+                      onChange={(e) => updateFormData({ imageSuggestions: e.target.value })}
                       className="border-gray-200 focus:border-purple-500 focus:ring-purple-500/20"
                     />
                   </div>
@@ -570,7 +684,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                     </div>
                     <Slider
                       value={formData.creativityLevel}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, creativityLevel: value }))}
+                      onValueChange={(value) => updateFormData({ creativityLevel: value })}
                       max={100}
                       step={1}
                       className="w-full"
@@ -584,7 +698,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-700">Template</Label>
-                      <Select value={formData.template} onValueChange={(value) => setFormData(prev => ({ ...prev, template: value }))}>
+                      <Select value={formData.template} onValueChange={(value) => updateFormData({ template: value })}>
                         <SelectTrigger className="border-gray-200">
                           <SelectValue placeholder="Select template" />
                         </SelectTrigger>
@@ -600,7 +714,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-700">Language</Label>
-                      <Select value={formData.language} onValueChange={(value) => setFormData(prev => ({ ...prev, language: value }))}>
+                      <Select value={formData.language} onValueChange={(value) => updateFormData({ language: value })}>
                         <SelectTrigger className="border-gray-200">
                           <SelectValue />
                         </SelectTrigger>
@@ -620,7 +734,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                     </div>
                     <Switch
                       checked={formData.includeQuotes}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeQuotes: checked }))}
+                      onCheckedChange={(checked) => updateFormData({ includeQuotes: checked })}
                     />
                   </div>
                 </CardContent>
@@ -631,33 +745,68 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
           {/* Action Buttons */}
           <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
             <CardContent className="pt-6">
-              <div className="flex flex-wrap gap-4 justify-center">
-                {onBack && (
+              <div className="pt-4">
+                {hasGeneratedOnce && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm mb-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900 mb-1">Generate Status:</div>
+                        <div className={`text-sm font-medium ${
+                          hasFormDataChanged() 
+                            ? "text-orange-600" 
+                            : "text-green-600"
+                        }`}>
+                          {hasFormDataChanged() ? "Ready to generate content" : "Content generated"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900 mb-1">Next Step:</div>
+                        <div className="text-sm text-gray-600">
+                          {hasFormDataChanged() ? "Generate new content first (inputs changed)" : "Review the generated content"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-4 justify-center">
+                  {onBack && (
+                    <Button
+                      onClick={onBack}
+                      variant="outline"
+                      className="border-gray-300 text-gray-600 hover:bg-gray-50 px-6 py-3 inline-flex items-center gap-2"
+                      size="lg"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Back to Dashboard
+                    </Button>
+                  )}
                   <Button
-                    onClick={onBack}
+                    onClick={() => handleSubmit('generate')}
+                    disabled={!isGenerateEnabled()}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    size="lg"
+                    title={getGenerateButtonStatus()}
+                  >
+                    {isGenerating ? "Generating..." : hasGeneratedOnce && !hasFormDataChanged() ? "Regenerate Blog" : "Generate Blog"}
+                  </Button>
+                  <Button
+                    onClick={handleNextClick}
+                    disabled={!isNextEnabled()}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 text-lg font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    size="lg"
+                    title={getNextButtonStatus()}
+                  >
+                    Next Page →
+                  </Button>
+                  <Button
+                    onClick={() => handleSubmit('clear')}
                     variant="outline"
-                    className="border-gray-300 text-gray-600 hover:bg-gray-50 px-6 py-3 inline-flex items-center gap-2"
+                    className="border-red-300 text-red-600 hover:bg-red-50 px-6 py-3"
                     size="lg"
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Dashboard
+                    Clear Form
                   </Button>
-                )}
-                <Button
-                  onClick={() => handleSubmit('generate')}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-medium shadow-lg"
-                  size="lg"
-                >
-                  Generate Blog
-                </Button>
-                <Button
-                  onClick={() => handleSubmit('clear')}
-                  variant="outline"
-                  className="border-red-300 text-red-600 hover:bg-red-50 px-6 py-3"
-                  size="lg"
-                >
-                  Clear Form
-                </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

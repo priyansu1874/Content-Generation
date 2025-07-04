@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BlogFormGenerator, { BlogFormGeneratorProps } from '@/modules/blog/BlogFormGenerator';
 import FinalPrompt from '@/modules/blog/FinalPrompt';
 import ContentValidation from '@/modules/blog/ContentValidation';
+import { BlogFormProvider } from '@/modules/blog/BlogFormContext';
 import { Button } from '@/shared/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -74,6 +75,7 @@ const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
             systemPrompt={blogFormData?.webhookResponse || ''}
             onSubmitForApproval={handlePromptSubmitForApproval}
             onBack={handlePromptBack}
+            onNext={() => setCurrentStep('validation')}
           />
         );
       
@@ -92,9 +94,11 @@ const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      {renderCurrentStep()}
-    </div>
+    <BlogFormProvider>
+      <div className="max-w-6xl mx-auto p-4">
+        {renderCurrentStep()}
+      </div>
+    </BlogFormProvider>
   );
 };
 
