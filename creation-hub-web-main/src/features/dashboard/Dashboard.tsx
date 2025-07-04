@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
   X
 } from 'lucide-react';
+import { supabase } from '@/config/supabaseClient';
 
 interface ContentItem {
   id: string;
@@ -53,75 +54,19 @@ const Dashboard = () => {
 
   const contentTypes = ['Website Blog', 'LinkedIn Post', 'Newsletter', 'Technical Article', 'Facebook Post', 'Carousel', 'Twitter Post', 'Thought Leadership'];
 
-  // Simulate fetching data from Supabase
+  // Fetching data from Supabase
   useEffect(() => {
-    const mockData: ContentItem[] = [
-      {
-        id: '1',
-        title: 'How to Build Better React Components',
-        type: 'Website Blog',
-        createdAt: '2024-01-15',
-        status: 'published',
-        author: 'John Doe'
-      },
-      {
-        id: '2',
-        title: 'The Future of AI in Development',
-        type: 'LinkedIn Post',
-        createdAt: '2024-01-14',
-        status: 'draft',
-        author: 'Jane Smith'
-      },
-      {
-        id: '3',
-        title: 'Weekly Tech Newsletter #15',
-        type: 'Newsletter',
-        createdAt: '2024-01-13',
-        status: 'published',
-        author: 'Mike Johnson'
-      },
-      {
-        id: '4',
-        title: 'Understanding Microservices Architecture',
-        type: 'Technical Article',
-        createdAt: '2024-01-12',
-        status: 'in-progress',
-        author: 'Sarah Wilson'
-      },
-      {
-        id: '5',
-        title: 'Product Launch Announcement',
-        type: 'Facebook Post',
-        createdAt: '2024-01-11',
-        status: 'published',
-        author: 'Tom Brown'
-      },
-      {
-        id: '6',
-        title: 'Social Media Strategy Guide',
-        type: 'Carousel',
-        createdAt: '2024-01-10',
-        status: 'draft',
-        author: 'Lisa Chen'
-      },
-      {
-        id: '7',
-        title: 'Quick Tips for Productivity',
-        type: 'Twitter Post',
-        createdAt: '2024-01-09',
-        status: 'published',
-        author: 'Alex Rivera'
-      },
-      {
-        id: '8',
-        title: 'Leadership in the Digital Age',
-        type: 'Thought Leadership',
-        createdAt: '2024-01-08',
-        status: 'in-progress',
-        author: 'David Park'
+    const fetchContent = async () => {
+      const { data, error } = await supabase
+        .from('content') // replace 'content' with your actual table name
+        .select('*');
+      if (error) {
+        console.error('Error fetching content:', error);
+      } else {
+        setContent(data || []);
       }
-    ];
-    setContent(mockData);
+    };
+    fetchContent();
   }, []);
 
   const filteredAndSortedContent = content
@@ -149,9 +94,11 @@ const Dashboard = () => {
     });
 
   const handleTypeFilter = (type: string, checked: boolean) => {
-    checked 
-      ? setSelectedTypes(prev => [...prev, type])
-      : setSelectedTypes(prev => prev.filter(t => t !== type));
+    if (checked) {
+      setSelectedTypes(prev => [...prev, type]);
+    } else {
+      setSelectedTypes(prev => prev.filter(t => t !== type));
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -165,9 +112,12 @@ const Dashboard = () => {
   };
 
   const handleSort = (field: 'date' | 'title' | 'type') => {
-    sortBy === field
-      ? setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-      : (setSortBy(field), setSortOrder('desc'));
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
   };
 
   const handleTileClick = (tileName: string, tilePath: string) => {
