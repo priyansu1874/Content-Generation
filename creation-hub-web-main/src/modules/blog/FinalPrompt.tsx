@@ -22,7 +22,6 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
   onNext,
 }) => {
   const [finalPrompt, setFinalPrompt] = useState('');
-  const [promptLines, setPromptLines] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastGeneratedPromptText, setLastGeneratedPromptText] = useState(''); // Track last generated prompt
   const [hasClickedGenerate, setHasClickedGenerate] = useState(false); // Track if generate was clicked
@@ -36,13 +35,6 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
     generatedPrompt,
     markAsGenerated
   } = blogFormContext || {};
-
-  useEffect(() => {
-    // Convert JSON and \n to readable text
-    const readablePrompt = parseSystemPrompt(systemPrompt);
-    const lines = readablePrompt.split('\n').map(line => line.trim());
-    setPromptLines(lines);
-  }, [systemPrompt]);
 
   useEffect(() => {
     if (formData?.webhookResponse) {
@@ -229,22 +221,6 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
           <p className="text-lg text-gray-600">Review and edit the final prompt for AI generation</p>
         </div>
 
-        {/* System Prompt Section */}
-        {systemPrompt && (
-          <Card className="mb-8 shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-xl">System Prompt (line by line)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="font-mono text-sm whitespace-pre-wrap max-h-64 overflow-y-auto p-2">
-                {promptLines.map((line, idx) => (
-                  <p key={idx}>{line}</p>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Final Prompt Editor */}
         <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
           <CardHeader>
@@ -346,24 +322,5 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
     </div>
   );
 };
-
-function parseSystemPrompt(raw: string): string {
-  // Try to parse JSON if it's an array/object
-  let promptText = raw;
-  try {
-    const parsed = JSON.parse(raw);
-    // If it's an array with objects, get the first object's systemPrompt property
-    if (Array.isArray(parsed) && parsed[0]?.systemPrompt) {
-      promptText = parsed[0].systemPrompt;
-    } else if (parsed.systemPrompt) {
-      promptText = parsed.systemPrompt;
-    }
-  } catch {
-    // If not JSON, use as is
-    promptText = raw;
-  }
-  // Replace all \n (escaped newlines) with real newlines
-  return promptText.replace(/\\n/g, '\n');
-}
 
 export default FinalPrompt;
