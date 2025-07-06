@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BlogFormGenerator, { BlogFormGeneratorProps } from '@/modules/blog/BlogFormGenerator';
-import FinalPrompt from '@/modules/blog/FinalPrompt';
+import FinalPromptWithButtonLogic from '@/modules/blog/FinalPromptWithButtonLogic';
 import ContentValidation from '@/modules/blog/ContentValidation';
 import { BlogFormProvider } from '@/modules/blog/BlogFormContext';
 import { Button } from '@/shared/components/ui/button';
@@ -20,6 +20,7 @@ const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
   const [finalContent, setFinalContent] = useState<string>('');
 
   const handleFormNext = (data: BlogFormGeneratorNextData) => {
+    // Keep all form data for the prompt page
     setBlogFormData(data);
     setCurrentStep('prompt');
   };
@@ -41,6 +42,7 @@ const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
   };
 
   const handleValidationBack = () => {
+    // Simply navigate back to the prompt page
     setCurrentStep('prompt');
   };
 
@@ -70,7 +72,7 @@ const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
       
       case 'prompt':
         return (
-          <FinalPrompt
+          <FinalPromptWithButtonLogic
             formData={blogFormData!}
             systemPrompt={blogFormData?.webhookResponse || ''}
             onSubmitForApproval={handlePromptSubmitForApproval}

@@ -6,37 +6,33 @@ import { Label } from '@/shared/components/ui/label';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { useBlogForm } from './BlogFormContext';
 
-interface FinalPromptProps {
-  onBack: () => void;
+interface FinalPromptWithButtonLogicProps {
+  formData: any;
+  systemPrompt: string;
   onSubmitForApproval: (prompt: string) => void;
-  formData?: any;
-  systemPrompt?: string;
-  onNext?: () => void;
+  onBack: () => void;
+  onNext: () => void;
 }
 
-const FinalPrompt: React.FC<FinalPromptProps> = ({
-  onBack,
-  onSubmitForApproval,
+const FinalPromptWithButtonLogic: React.FC<FinalPromptWithButtonLogicProps> = ({
   formData,
-  systemPrompt = '',
-  onNext,
+  systemPrompt,
+  onSubmitForApproval,
+  onBack,
+  onNext
 }) => {
+  // Local state
   const [finalPrompt, setFinalPrompt] = useState('');
   const [promptLines, setPromptLines] = useState<string[]>([]);
+  const [lastGeneratedPrompt, setLastGeneratedPrompt] = useState('');
+  const [hasGeneratedInThisSession, setHasGeneratedInThisSession] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [lastGeneratedPromptText, setLastGeneratedPromptText] = useState(''); // Track last generated prompt
-  const [hasClickedGenerate, setHasClickedGenerate] = useState(false); // Track if generate was clicked
-
-  // Smart button logic
+  
+  // Global state from context
   const blogFormContext = useBlogForm();
-  const { 
-    hasGeneratedOnce, 
-    hasFormDataChanged, 
-    lastGeneratedPrompt,
-    generatedPrompt,
-    markAsGenerated
-  } = blogFormContext || {};
+  const { hasGeneratedOnce, isComingFromValidation } = blogFormContext;
 
+  // Process the system prompt
   useEffect(() => {
     // Convert JSON and \n to readable text
     const readablePrompt = parseSystemPrompt(systemPrompt);
@@ -44,6 +40,7 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
     setPromptLines(lines);
   }, [systemPrompt]);
 
+  // Process the form data
   useEffect(() => {
     if (formData?.webhookResponse) {
       let cleaned = formData.webhookResponse;
@@ -82,76 +79,34 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
       setFinalPrompt(cleaned + bodyText);
     }
   }, [formData]);
-  
-  // Initialize state if we have existing content
+
+  // Logic when returning from validation page
   useEffect(() => {
-    if (formData?.webhookResponse?.trim() && finalPrompt.trim() && !hasClickedGenerate) {
-      console.log('Setting hasClickedGenerate due to existing webhookResponse');
-      setHasClickedGenerate(true);
-      setLastGeneratedPromptText(finalPrompt.trim());
+    if (isComingFromValidation && hasGeneratedOnce) {
+      setLastGeneratedPrompt(finalPrompt);
+      setHasGeneratedInThisSession(true);
     }
-  }, [formData?.webhookResponse, finalPrompt, hasClickedGenerate]);
+  }, [isComingFromValidation, hasGeneratedOnce, finalPrompt]);
 
-  // Run once on component mount to initialize correctly
-  useEffect(() => {
-    console.log('FinalPrompt component mounted');
-    // If there's no webhook response, make sure the button is enabled
-    if (!formData?.webhookResponse) {
-      setHasClickedGenerate(false);
-      setLastGeneratedPromptText('');
-      console.log('Reset button state on initial mount');
-    }
-  }, []);
-
-  // Reset hasClickedGenerate when webhook response changes
-  useEffect(() => {
-    // If there's no webhookResponse, we know this is the first time 
-    // the user is navigating to this page or after form data changes
-    if (!formData?.webhookResponse) {
-      setHasClickedGenerate(false);
-      setLastGeneratedPromptText('');
-      console.log('Reset generate button state due to no webhookResponse');
-    }
-  }, [formData?.webhookResponse]);
-
-  // Debug log when component mounts or formData changes
-  useEffect(() => {
-    console.log('FinalPrompt - formData:', formData);
-    console.log('FinalPrompt - hasClickedGenerate:', hasClickedGenerate);
-    console.log('FinalPrompt - lastGeneratedPromptText:', lastGeneratedPromptText);
-    console.log('FinalPrompt - webhookResponse exists:', !!formData?.webhookResponse);
-    console.log('FinalPrompt - isGenerateEnabled:', isGenerateEnabled());
-  }, [formData, hasClickedGenerate, lastGeneratedPromptText]);
-
-  // Smart button logic functions
+  // Generate Button Logic
   const isGenerateEnabled = () => {
-    // Always disable if generating or no prompt text
-    if (!finalPrompt.trim() || isGenerating) return false;
-    
-    // First time navigation - ALWAYS enable the button
-    // This ensures the button is enabled when first arriving at the page
-    if (!hasClickedGenerate) return true;
-    
-    // After generation, only enable if prompt has changed
-    const promptChanged = finalPrompt.trim() !== lastGeneratedPromptText.trim();
-    return promptChanged;
+    return !isGenerating && finalPrompt.trim() && !(hasGeneratedOnce && finalPrompt === lastGeneratedPrompt);
   };
 
-  // Smart button logic for Next Page button  
+  // Next Page Button Logic
   const isNextEnabled = () => {
-    // Enable Next if we have clicked generate and have content
-    return hasClickedGenerate && formData?.webhookResponse?.trim();
+    return hasGeneratedInThisSession;
   };
 
   const getGenerateButtonStatus = () => {
     if (!finalPrompt.trim()) return "Please enter a prompt";
     if (isGenerating) return "Generating content...";
     
-    if (!hasClickedGenerate) {
+    if (!hasGeneratedInThisSession) {
       return "Ready to generate content";
     }
     
-    const promptChanged = finalPrompt.trim() !== lastGeneratedPromptText.trim();
+    const promptChanged = finalPrompt !== lastGeneratedPrompt;
     if (promptChanged) {
       return "Prompt changed - ready to generate content";
     } else {
@@ -160,17 +115,14 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
   };
 
   const getNextButtonStatus = () => {
-    if (!hasClickedGenerate) return "Generate content first";
-    if (!formData?.webhookResponse?.trim()) return "No content generated yet";
+    if (!hasGeneratedInThisSession) return "Generate content first";
     return "Ready to preview content";
   };
 
-  const handleSubmit = async () => {
-    if (!isGenerateEnabled()) return;
+  const handleGenerate = async () => {
+    if (!finalPrompt.trim() || isGenerating) return;
 
     setIsGenerating(true);
-    setHasClickedGenerate(true); // Mark that generate was clicked
-    console.log('Generate button clicked, hasClickedGenerate set to true');
     
     try {
       const res = await fetch('https://priyansu4781.app.n8n.cloud/webhook/83037732-608c-4f27-9b81-04c49daae6d9', {
@@ -180,44 +132,30 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
       });
       const data = await res.text();
       
+      // Update button states
+      if (blogFormContext.markAsGenerated) {
+        blogFormContext.markAsGenerated(finalPrompt, formData);
+      }
+      setHasGeneratedInThisSession(true);
+      setLastGeneratedPrompt(finalPrompt);
+      
       // Update the blog form context with the generated data
       const finalData = { ...formData, finalPrompt, webhookResponse: data };
       if (blogFormContext?.setFormData) {
         blogFormContext.setFormData(finalData);
-        console.log('Updated form data with webhook response');
       }
       
-      // Mark as generated for smart button logic
-      if (typeof markAsGenerated === 'function') {
-        markAsGenerated(finalPrompt, formData);
-        console.log('Marked as generated in context');
-      }
-      
-      // Save the prompt text that was used for generation
-      setLastGeneratedPromptText(finalPrompt.trim());
-      console.log('Last generated prompt text updated:', finalPrompt.trim());
-      
-      onSubmitForApproval?.(data);
-      
-      // Don't automatically navigate - let user click Next Page button
-      
+      // Pass data to parent
+      onSubmitForApproval(data);
     } catch (error) {
       console.error('Error generating content:', error);
-      const errorData = { ...formData, finalPrompt, webhookResponse: 'Error: Failed to get response from webhook.' };
-      if (blogFormContext?.setFormData) {
-        blogFormContext.setFormData(errorData);
-      }
-      setFinalPrompt('Error: Failed to get response from webhook.');
-      // Save the prompt text even on error
-      setLastGeneratedPromptText(finalPrompt.trim());
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Handle next button click
   const handleNextClick = () => {
-    if (!isNextEnabled() || !onNext) return;
+    if (!isNextEnabled()) return;
     onNext();
   };
 
@@ -277,34 +215,28 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
             </div>
 
             <div className="pt-4">
-              {hasClickedGenerate && (
+              {hasGeneratedInThisSession && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm mb-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="text-sm font-semibold text-gray-900 mb-1">Generate Status:</div>
                       <div className={`text-sm font-medium ${
-                        finalPrompt.trim() !== lastGeneratedPromptText.trim()
+                        finalPrompt !== lastGeneratedPrompt
                           ? "text-orange-600" 
-                          : formData?.webhookResponse?.trim()
-                          ? "text-green-600"
-                          : "text-blue-600"
+                          : "text-green-600"
                       }`}>
-                        {formData?.webhookResponse?.trim()
-                          ? "Content generated" 
-                          : finalPrompt.trim() !== lastGeneratedPromptText.trim()
-                          ? "Ready to generate content"
-                          : "Ready to generate content"
+                        {finalPrompt !== lastGeneratedPrompt
+                          ? "Ready to generate content" 
+                          : "Content generated"
                         }
                       </div>
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-gray-900 mb-1">Next Step:</div>
                       <div className="text-sm text-gray-600">
-                        {formData?.webhookResponse?.trim()
-                          ? "Review and approve the generated content"
-                          : finalPrompt.trim() !== lastGeneratedPromptText.trim()
+                        {finalPrompt !== lastGeneratedPrompt
                           ? "Generate new content with updated prompt"
-                          : "Change prompt to generate new content"
+                          : "Review and approve the generated content"
                         }
                       </div>
                     </div>
@@ -318,7 +250,7 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
                 </Button>
                 <div className="flex gap-3">
                   <Button
-                    onClick={handleSubmit}
+                    onClick={handleGenerate}
                     disabled={!isGenerateEnabled()}
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
@@ -326,17 +258,15 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
                   >
                     {isGenerating ? "Generating..." : "Generate Content"}
                   </Button>
-                  {onNext && (
-                    <Button
-                      onClick={handleNextClick}
-                      disabled={!isNextEnabled()}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 text-lg font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                      size="lg"
-                      title={getNextButtonStatus()}
-                    >
-                      Next Page →
-                    </Button>
-                  )}
+                  <Button
+                    onClick={handleNextClick}
+                    disabled={!isNextEnabled()}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 text-lg font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    size="lg"
+                    title={getNextButtonStatus()}
+                  >
+                    Next Page →
+                  </Button>
                 </div>
               </div>
             </div>
@@ -366,4 +296,4 @@ function parseSystemPrompt(raw: string): string {
   return promptText.replace(/\\n/g, '\n');
 }
 
-export default FinalPrompt;
+export default FinalPromptWithButtonLogic;
