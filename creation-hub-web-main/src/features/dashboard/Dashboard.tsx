@@ -64,17 +64,17 @@ const Dashboard = () => {
   useEffect(() => {
     // Helper to map table name to type
     const tableTypeMap = {
-      'blog content': 'Blog Content',
+      'website_blog': 'Website Blog',
       'carousel': 'Carousel',
       'Content Post Information': 'Content Post Information',
       'technical_article_content': 'Technical Article Content',
     };
 
     const fetchBlogContent = async () => {
-      const { data, error } = await supabase.from('blog content').select('*');
+      const { data, error } = await supabase.from('website_blog').select('*');
       if (!error) setBlogContent((data || []).map(row => ({
         ...row,
-        type: tableTypeMap['blog content'],
+        type: tableTypeMap['website_blog'],
         createdAt: row.createdAt || row.created_at || '',
       })));
     };
