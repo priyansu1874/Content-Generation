@@ -31,9 +31,9 @@ const Card = React.forwardRef<
       </div>
     )}
     {cardContent ? (
-      <div className="p-6 pt-0">{cardContent}</div>
+      <div className="p-6 pt-4">{cardContent}</div>
     ) : children ? (
-      <div className="p-6 pt-0">{children}</div>
+      <div className="p-6 pt-4">{children}</div>
     ) : null}
   </div>
 ))
@@ -82,7 +82,7 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  <div ref={ref} className={cn("p-6 pt-4", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
 
@@ -92,7 +92,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
+    className={cn("flex items-center p-6 pt-4", className)}
     {...props}
   />
 ))

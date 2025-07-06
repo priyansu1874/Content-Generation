@@ -193,7 +193,7 @@ const Dashboard = () => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
         <div
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-0 relative animate-fade-in border border-gray-200 overflow-hidden"
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-4 relative animate-fade-in border border-gray-200 overflow-hidden"
           onClick={e => e.stopPropagation()}
         >
           {/* Header Bar */}
@@ -355,7 +355,7 @@ const Dashboard = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsFilterOpen(false)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-4"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -388,7 +388,7 @@ const Dashboard = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleTypeFilter(type, false)}
-                        className="ml-2 h-4 w-4 p-0 hover:bg-transparent"
+                        className="ml-2 h-4 w-4 p-4 hover:bg-transparent"
                       >
                         <X className="h-3 w-3" />
                       </Button>
