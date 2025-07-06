@@ -142,8 +142,14 @@ const Dashboard = () => {
           break;
         case 'date':
         default:
-          // No createdAt, so fallback to title
-          comparison = a.title.localeCompare(b.title);
+          // Sort by createdAt date, fallback to title if dates are equal or missing
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          comparison = dateA - dateB;
+          // If dates are equal or both missing, fallback to title
+          if (comparison === 0) {
+            comparison = a.title.localeCompare(b.title);
+          }
           break;
       }
       return sortOrder === 'desc' ? -comparison : comparison;
