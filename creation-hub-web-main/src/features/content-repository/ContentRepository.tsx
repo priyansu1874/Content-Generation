@@ -24,34 +24,82 @@ const ContentRepository = () => {
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'type'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [content, setContent] = useState<ContentItem[]>([]);
+  // Remove content table from repository
+  const [blogContent, setBlogContent] = useState<ContentItem[]>([]);
+  const [carouselContent, setCarouselContent] = useState<ContentItem[]>([]);
+  const [linkedinContent, setLinkedinContent] = useState<ContentItem[]>([]);
+  const [technicalArticleContent, setTechnicalArticleContent] = useState<ContentItem[]>([]);
+  const [viewItem, setViewItem] = useState<Record<string, unknown> | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Fetch data from Supabase
+  // Fetch data from Supabase for all modules
   useEffect(() => {
-    const fetchContent = async () => {
-      const { data, error } = await supabase
-        .from('content') // Change 'content' to your actual table name if different
-        .select('*');
-      if (error) {
-        console.error('Error fetching content:', error);
-      } else {
-        setContent(data || []);
-      }
+    // Helper to map table name to type
+    const tableTypeMap = {
+      'blog content': 'Blog Content',
+      'carousel': 'Carousel',
+      'Content Post Information': 'Content Post Information',
+      'technical_article_content': 'Technical Article Content',
     };
-    fetchContent();
+
+    const fetchBlogContent = async () => {
+      const { data, error } = await supabase.from('blog content').select('*');
+      if (!error) setBlogContent((data || []).map(row => ({
+        ...row,
+        type: tableTypeMap['blog content'],
+        createdAt: row.createdAt || row.created_at || '',
+      })));
+    };
+    const fetchCarouselContent = async () => {
+      const { data, error } = await supabase.from('carousel').select('*');
+      if (!error) setCarouselContent((data || []).map(row => ({
+        ...row,
+        type: tableTypeMap['carousel'],
+        createdAt: row.createdAt || row.created_at || '',
+      })));
+    };
+    const fetchLinkedinContent = async () => {
+      const { data, error } = await supabase.from('Content Post Information').select('*');
+      if (!error) setLinkedinContent((data || []).map(row => ({
+        ...row,
+        type: tableTypeMap['Content Post Information'],
+        createdAt: row.createdAt || row.created_at || '',
+      })));
+    };
+    const fetchTechnicalArticleContent = async () => {
+      const { data, error } = await supabase.from('technical_article_content').select('*');
+      if (!error) setTechnicalArticleContent((data || []).map(row => ({
+        ...row,
+        type: tableTypeMap['technical_article_content'],
+        createdAt: row.createdAt || row.created_at || '',
+      })));
+    };
+    fetchBlogContent();
+    fetchCarouselContent();
+    fetchLinkedinContent();
+    fetchTechnicalArticleContent();
   }, []);
 
   const contentTypes = ['Website Blog', 'LinkedIn Post', 'Newsletter', 'Technical Article', 'Facebook Post', 'Carousel', 'Twitter Post', 'Thought Leadership'];
 
-  const filteredAndSortedContent = content
-    .filter(item => 
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (selectedTypes.length === 0 || selectedTypes.includes(item.type))
-    )
+  // Combine all fetched content into one array
+  const allContent = [
+    ...blogContent,
+    ...carouselContent,
+    ...linkedinContent,
+    ...technicalArticleContent
+  ];
+
+  const filteredAndSortedContent = allContent
+    .filter(item => {
+      if (!item || typeof item.title !== 'string' || typeof item.type !== 'string') return false;
+      return (
+        item.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        (selectedTypes.length === 0 || selectedTypes.includes(item.type))
+      );
+    })
     .sort((a, b) => {
       let comparison = 0;
-      
       switch (sortBy) {
         case 'title':
           comparison = a.title.localeCompare(b.title);
@@ -61,10 +109,9 @@ const ContentRepository = () => {
           break;
         case 'date':
         default:
-          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          comparison = a.createdAt && b.createdAt ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() : 0;
           break;
       }
-      
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
@@ -262,38 +309,76 @@ const ContentRepository = () => {
               key={item.id} 
               className="hover:shadow-md transition-shadow cursor-pointer p-4"
             >
-              <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
-                <div className="flex-1 mb-4 sm:mb-0">
-                  <Heading3 className="text-lg font-semibold text-gray-900 mb-2 text-center sm:text-left">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <Heading3 className="text-lg font-semibold text-gray-900 mb-2">
                     {item.title}
                   </Heading3>
-                  <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-gray-600 mb-3 justify-center sm:justify-start">
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                     <span>{item.type}</span>
-                    <span className="hidden sm:inline">•</span>
-                    <span>{item.author}</span>
-                    <span className="hidden sm:inline">•</span>
-                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                    <span>•</span>
+                    <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}</span>
                   </div>
                 </div>
-                <div className="mb-4 sm:mb-0">
-                  <Badge className={getStatusColor(item.status)}>
-                    {item.status}
-                  </Badge>
-                </div>
+                <Badge className={getStatusColor(item.status)}>
+                  {item.status}
+                </Badge>
               </div>
-              <div className="flex gap-2 justify-center sm:justify-start">
+              <div className="flex gap-2">
                 <Button size="sm" variant="outline">
                   Edit
                 </Button>
                 <Button size="sm" variant="outline">
                   Duplicate
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={e => { e.stopPropagation(); setViewItem(item as unknown as Record<string, unknown>); }}>
                   View
                 </Button>
               </div>
             </Card>
           ))
+        )}
+        {/* Modal for viewing all fields of a row */}
+        {viewItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setViewItem(null)}>
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-0 relative animate-fade-in border border-gray-200 overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header Bar */}
+              <div className="flex items-center justify-between px-8 py-6 bg-gradient-to-r from-blue-600 to-cyan-500 border-b border-gray-100">
+                <Heading3 className="text-white text-2xl font-bold">Content Details</Heading3>
+                <button
+                  className="text-white hover:text-gray-200 transition-colors"
+                  onClick={() => setViewItem(null)}
+                  aria-label="Close"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              {/* Content Body */}
+              <div className="px-8 py-8 bg-gray-50 max-h-[70vh] overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                  {Object.entries(viewItem).map(([key, value]) => (
+                    <div key={key} className="flex flex-col gap-1 bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                      <span className="font-semibold text-gray-700 text-base capitalize mb-1 tracking-wide">{key.replace(/_/g, ' ')}</span>
+                      <span className="text-gray-900 text-sm break-words">
+                        {key.toLowerCase().includes('date') || key.toLowerCase().includes('created')
+                          ? (value ? new Date(value as string).toLocaleString() : '-')
+                          : typeof value === 'boolean'
+                            ? value ? 'Yes' : 'No'
+                            : value === null || value === undefined || value === ''
+                              ? '-'
+                              : typeof value === 'object'
+                                ? <pre className="bg-gray-100 rounded p-2 text-xs overflow-x-auto max-w-full whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
+                                : value.toString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
