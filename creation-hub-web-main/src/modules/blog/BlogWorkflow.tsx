@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BlogFormGenerator, { BlogFormGeneratorProps } from '@/modules/blog/BlogFormGenerator';
-import FinalPromptWithButtonLogic from '@/modules/blog/FinalPromptWithButtonLogic';
+import FinalPrompt from '@/modules/blog/FinalPrompt';
 import ContentValidation from '@/modules/blog/ContentValidation';
 import { BlogFormProvider } from '@/modules/blog/BlogFormContext';
 import { Button } from '@/shared/components/ui/button';
@@ -72,7 +72,7 @@ const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
       
       case 'prompt':
         return (
-          <FinalPromptWithButtonLogic
+          <FinalPrompt
             formData={blogFormData!}
             systemPrompt={blogFormData?.webhookResponse || ''}
             onSubmitForApproval={handlePromptSubmitForApproval}
