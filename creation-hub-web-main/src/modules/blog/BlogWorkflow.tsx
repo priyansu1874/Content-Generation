@@ -20,7 +20,6 @@ const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
   const [finalContent, setFinalContent] = useState<string>('');
 
   const handleFormNext = (data: BlogFormGeneratorNextData) => {
-    // Keep all form data for the prompt page
     setBlogFormData(data);
     setCurrentStep('prompt');
   };
