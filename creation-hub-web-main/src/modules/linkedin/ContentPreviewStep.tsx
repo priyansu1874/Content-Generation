@@ -1,7 +1,7 @@
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
-import { ThumbsUp, MessageCircle, Repeat2, Send, Download } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Repeat2, Send, Download, ArrowLeft } from 'lucide-react';
 import type { FormData } from './LinkedInAutomationForm';
 import { useLinkedInFormContext } from './LinkedInFormContext';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
@@ -305,6 +305,18 @@ const ContentPreviewStep = ({ formData, onPrev }: ContentPreviewStepProps) => {
             </Button>
           </div>
         </div>
+      </div>
+      
+      {/* Back to Dashboard Button */}
+      <div className="flex justify-center mt-8 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => window.location.href = '/dashboard'}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
       </div>
     </div>
   );

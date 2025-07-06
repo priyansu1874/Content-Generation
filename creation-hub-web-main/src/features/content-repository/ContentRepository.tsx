@@ -144,15 +144,7 @@ const ContentRepository = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4">
-      <div className="flex items-center justify-center gap-4 mb-8 text-center">
-        <Button
-          variant="outline"
-          onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
-        </Button>
+      <div className="flex flex-col items-center gap-4 mb-8 text-center">
         <Heading1 className="text-3xl font-bold text-gray-900">
           Content Repository
         </Heading1>
@@ -380,6 +372,18 @@ const ContentRepository = () => {
             </div>
           </div>
         )}
+      </div>
+      
+      {/* Back to Dashboard Button - Bottom Center */}
+      <div className="flex justify-center mt-8 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
       </div>
     </div>
   );
