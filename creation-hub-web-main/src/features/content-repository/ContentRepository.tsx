@@ -6,7 +6,7 @@ import { Card } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Heading1, Heading3, Heading4 } from '@/shared/components/typography';
-import { ArrowLeft, Search, Filter, Calendar, ArrowUpDown, X } from 'lucide-react';
+import { ArrowLeft, Search, Filter, Calendar, ArrowUpDown, X, Globe, Linkedin, Mail, FileText, Facebook, Image, Twitter, Brain } from 'lucide-react';
 import { supabase } from '@/config/supabaseClient';
 
 interface ContentItem {
@@ -31,6 +31,30 @@ const ContentRepository = () => {
   const [technicalArticleContent, setTechnicalArticleContent] = useState<ContentItem[]>([]);
   const [viewItem, setViewItem] = useState<Record<string, unknown> | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Function to get icon based on content type
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'Website Blog':
+        return Globe;
+      case 'Content Post Information':
+        return Linkedin;
+      case 'Technical Article Content':
+        return FileText;
+      case 'Carousel':
+        return Image;
+      case 'Newsletter':
+        return Mail;
+      case 'Facebook Post':
+        return Facebook;
+      case 'Twitter Post':
+        return Twitter;
+      case 'Thought Leadership':
+        return Brain;
+      default:
+        return FileText;
+    }
+  };
 
   // Fetch data from Supabase for all modules
   useEffect(() => {
@@ -299,34 +323,45 @@ const ContentRepository = () => {
           filteredAndSortedContent.map((item, index) => (
             <Card 
               key={`${item.type}-${item.id}-${index}`} 
-              className="hover:shadow-md transition-shadow cursor-pointer p-4"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <Heading3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {item.title}
-                  </Heading3>
-                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                    <span>{item.type}</span>
-                    <span>•</span>
-                    <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}</span>
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              cardContent={
+                <div className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center flex-shrink-0 mt-1">
+                        {(() => {
+                          const IconComponent = getContentTypeIcon(item.type);
+                          return <IconComponent className="h-5 w-5 text-white" />;
+                        })()}
+                      </div>
+                      <div className="flex-1">
+                        <Heading3 className="text-lg font-semibold text-gray-900 mb-2">
+                          {item.title}
+                        </Heading3>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                          <span>{item.type}</span>
+                          <span>•</span>
+                          <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className={getStatusColor(item.status)}>
+                        {item.status}
+                      </Badge>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={e => { e.stopPropagation(); setViewItem(item as unknown as Record<string, unknown>); }}
+                        className="px-4 py-2"
+                      >
+                        View
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Badge className={getStatusColor(item.status)}>
-                    {item.status}
-                  </Badge>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={e => { e.stopPropagation(); setViewItem(item as unknown as Record<string, unknown>); }}
-                    className="px-4 py-2"
-                  >
-                    View
-                  </Button>
-                </div>
-              </div>
-            </Card>
+              }
+            />
           ))
         )}
         {/* Modal for viewing all fields of a row */}

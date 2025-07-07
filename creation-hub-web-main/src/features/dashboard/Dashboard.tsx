@@ -187,6 +187,30 @@ const Dashboard = () => {
     navigate(tilePath);
   };
 
+  // Function to get icon based on content type
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'Website Blog':
+        return Globe;
+      case 'Content Post Information':
+        return Linkedin;
+      case 'Technical Article Content':
+        return FileText;
+      case 'Carousel':
+        return Image;
+      case 'Newsletter':
+        return Mail;
+      case 'Facebook Post':
+        return Facebook;
+      case 'Twitter Post':
+        return Twitter;
+      case 'Thought Leadership':
+        return Brain;
+      default:
+        return FileText;
+    }
+  };
+
   // Factorized modal for viewing all fields of a row
   const ViewModal = ({ item, onClose }: { item: Record<string, unknown>, onClose: () => void }) => {
     if (!item) return null;
@@ -438,14 +462,22 @@ const Dashboard = () => {
                 cardContent={
                   <div className="p-4">
                     <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <Heading3 className="text-lg font-semibold text-gray-900 mb-2">
-                          {item.title}
-                        </Heading3>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                          <span>{item.type}</span>
-                          <span>•</span>
-                          <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}</span>
+                      <div className="flex-1 flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center flex-shrink-0 mt-1">
+                          {(() => {
+                            const IconComponent = getContentTypeIcon(item.type);
+                            return <IconComponent className="h-5 w-5 text-white" />;
+                          })()}
+                        </div>
+                        <div className="flex-1">
+                          <Heading3 className="text-lg font-semibold text-gray-900 mb-2">
+                            {item.title}
+                          </Heading3>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                            <span>{item.type}</span>
+                            <span>•</span>
+                            <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
