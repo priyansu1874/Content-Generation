@@ -168,9 +168,9 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
     blogFormContext.setFormData(newFormData);
   };
 
-  // Form validation - only title is required
+  // Form validation - title and organization are required
   const isFormValid = () => {
-    return formData.title.trim() !== '';
+    return formData.title.trim() !== '' && formData.organization.trim() !== '';
   };
 
   // Smart button logic functions
@@ -198,7 +198,8 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
   };
 
   const getGenerateButtonStatus = () => {
-    if (!isFormValid()) return "Please enter a blog title";
+    if (!formData.title.trim()) return "Please enter a blog title";
+    if (!formData.organization.trim()) return "Please select an organization";
     if (isGenerating) return "Generating prompt...";
     
     if (hasGeneratedOnce) {
@@ -437,7 +438,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">Organization</Label>
+                      <Label className="text-sm font-medium text-gray-700">Organization *</Label>
                       <Select
                         value={formData.organization}
                         onValueChange={(value) => updateFormData({ organization: value })}

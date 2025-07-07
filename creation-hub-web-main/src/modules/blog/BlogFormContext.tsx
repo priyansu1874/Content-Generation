@@ -136,6 +136,7 @@ export const BlogFormProvider: React.FC<{ children: ReactNode }> = ({ children }
     const hasChanged = (
       formData.title !== lastGeneratedFormData.title ||
       formData.targetAudience !== lastGeneratedFormData.targetAudience ||
+      formData.organization !== lastGeneratedFormData.organization ||
       formData.primaryGoal !== lastGeneratedFormData.primaryGoal ||
       formData.toneOfVoice !== lastGeneratedFormData.toneOfVoice ||
       formData.wordCountRange !== lastGeneratedFormData.wordCountRange ||
