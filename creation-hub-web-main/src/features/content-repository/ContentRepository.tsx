@@ -296,16 +296,26 @@ const ContentRepository = () => {
             <p className="text-gray-500">No content found matching your criteria.</p>
           </Card>
         ) : (
-          filteredAndSortedContent.map(item => (
+          filteredAndSortedContent.map((item, index) => (
             <Card 
-              key={item.id} 
+              key={`${item.type}-${item.id}-${index}`} 
               className="hover:shadow-md transition-shadow cursor-pointer p-4"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <Heading3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {item.title}
-                  </Heading3>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Heading3 className="text-lg font-semibold text-gray-900">
+                      {item.title}
+                    </Heading3>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={e => { e.stopPropagation(); setViewItem(item as unknown as Record<string, unknown>); }}
+                      className="h-6 px-2 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
                   <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                     <span>{item.type}</span>
                     <span>•</span>
@@ -315,17 +325,6 @@ const ContentRepository = () => {
                 <Badge className={getStatusColor(item.status)}>
                   {item.status}
                 </Badge>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline">
-                  Edit
-                </Button>
-                <Button size="sm" variant="outline">
-                  Duplicate
-                </Button>
-                <Button size="sm" variant="outline" onClick={e => { e.stopPropagation(); setViewItem(item as unknown as Record<string, unknown>); }}>
-                  View
-                </Button>
               </div>
             </Card>
           ))
