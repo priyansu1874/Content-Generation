@@ -21,60 +21,35 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
   systemPrompt = '',
   onNext,
 }) => {
+  // Simplified state management - like LinkedIn
   const [finalPrompt, setFinalPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [lastGeneratedPrompt, setLastGeneratedPrompt] = useState('');
-  const [hasGeneratedInThisSession, setHasGeneratedInThisSession] = useState(false);
-  const [originalPrompt, setOriginalPrompt] = useState(''); // Track the original prompt
-  const [isComingFromGenerateBlog, setIsComingFromGenerateBlog] = useState(false); // Track navigation source
-  const [isInitialized, setIsInitialized] = useState(false); // Prevent state overwrites
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Smart button logic
   const blogFormContext = useBlogForm();
   const { 
     hasGeneratedOnce, 
     hasFormDataChanged, 
-    generatedPrompt,
+    lastGeneratedPrompt,
     markAsGenerated,
-    resetSession,
     isComingFromValidation,
     setComingFromValidation,
     formData: contextFormData,
-    setFormData: setContextFormData
+    setFormData: setContextFormData,
+    currentStep,
+    navigateToStep
   } = blogFormContext || {};
 
-  // Initialize prompt from context or webhook response - SINGLE POINT OF TRUTH
+  // Simple initialization - like LinkedIn
   useEffect(() => {
-    if (isInitialized) return; // Prevent re-initialization
+    if (isInitialized) return;
     
-    console.log('🚀 FinalPrompt Initialization - SINGLE RUN:', {
-      hasContextPrompt: !!contextFormData?.finalPrompt,
-      hasWebhookResponse: !!formData?.webhookResponse,
-      isComingFromValidation: !!isComingFromValidation,
-      webhookResponseLength: formData?.webhookResponse?.length || 0
-    });
-
-    // ROUTE 1: Coming from Generate Blog button (context has finalPrompt)
+    // Initialize prompt from context or webhook response
     if (contextFormData?.finalPrompt) {
-      console.log('✅ ROUTE 1: Coming from Generate Blog - context prompt exists');
       setFinalPrompt(contextFormData.finalPrompt);
-      setOriginalPrompt(contextFormData.finalPrompt);
-      setIsComingFromGenerateBlog(true);
-      setHasGeneratedInThisSession(false); // NOT generated in FinalPrompt yet
-      
-      // If there's also a webhook response, it means we're returning from validation
-      if (formData?.webhookResponse && isComingFromValidation) {
-        setLastGeneratedPrompt(contextFormData.finalPrompt);
-        setHasGeneratedInThisSession(true); // Restore session state
-        setIsComingFromGenerateBlog(false); // NOT coming from Generate Blog when returning from validation
-        console.log('🔄 Restoring from validation with existing generation');
-      }
-      
-    } 
-    // ROUTE 2: Direct webhook response (no context prompt) - this means first arrival with webhook
-    else if (formData?.webhookResponse) {
-      console.log('🟠 ROUTE 2: Direct webhook response - first arrival, treating as Generate Blog route');
-      
+    } else if (formData?.webhookResponse) {
+      // Process webhook response like before
       let cleaned = formData.webhookResponse;
       let bodyText = '';
 
@@ -100,144 +75,76 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
           }
         }
       } catch {
-        console.log('Webhook response is not JSON, using as-is');
+        // Not JSON, use as-is
       }
 
       cleaned = cleaned.replace(/\\n/g, '\n');
       const newPrompt = cleaned + bodyText;
-      
       setFinalPrompt(newPrompt);
-      setOriginalPrompt(newPrompt);
-      setLastGeneratedPrompt(''); // No last generated yet
-      setIsComingFromGenerateBlog(true); // Treat as coming from Generate Blog
-      setHasGeneratedInThisSession(false); // NOT generated in FinalPrompt yet
       
-      // Store in context for persistence
+      // Store in context
       if (setContextFormData && contextFormData) {
         setContextFormData({ ...contextFormData, finalPrompt: newPrompt });
       }
-    } 
-    // ROUTE 3: Fresh start
-    else {
-      console.log('🆕 ROUTE 3: Fresh start - no existing data');
-      setIsComingFromGenerateBlog(true); // Assume from Generate Blog
-      setHasGeneratedInThisSession(false);
     }
     
-    setIsInitialized(true); // Mark as initialized to prevent re-runs
-    console.log('✅ Initialization complete');
-    
-  }, [formData, contextFormData, isComingFromValidation]); // Only run when these change
+    setIsInitialized(true);
+  }, [formData, contextFormData, isInitialized, setContextFormData]);
 
-  // Generate Button Logic - CLEAR PRIORITY SYSTEM
+  // Simple button logic - like LinkedIn
   const isGenerateEnabled = () => {
-    if (!finalPrompt.trim()) return false;
-    if (isGenerating) return false;
+    if (!finalPrompt.trim() || isGenerating) return false;
     
-    const promptChanged = finalPrompt !== lastGeneratedPrompt;
-    const promptModifiedFromOriginal = finalPrompt !== originalPrompt;
+    // If we haven't generated before, enable if we have a prompt
+    if (!hasGeneratedOnce) return true;
     
-    console.log('🔍 BUTTON LOGIC DEBUG:', {
-      hasPrompt: !!finalPrompt.trim(),
-      isGenerating,
-      hasGeneratedInThisSession,
-      promptChanged,
-      promptModifiedFromOriginal,
-      isComingFromGenerateBlog,
-      isComingFromValidation: !!isComingFromValidation,
-      finalPromptLength: finalPrompt.length,
-      lastGeneratedPromptLength: lastGeneratedPrompt.length,
-      originalPromptLength: originalPrompt.length,
-      willEnable: 'calculating...'
-    });
-    
-    // PRIORITY 1: If coming from validation, disable until prompt changes
-    if (isComingFromValidation && !promptChanged) {
-      console.log('🔒 PRIORITY 1: Coming from validation - DISABLING until prompt changes');
-      return false;
+    // If coming from validation, only enable if prompt changed
+    if (isComingFromValidation) {
+      return finalPrompt.trim() !== lastGeneratedPrompt.trim();
     }
     
-    // PRIORITY 2: If coming from Generate Blog button, always enable (first time in FinalPrompt)
-    if (isComingFromGenerateBlog) {
-      console.log('✅ PRIORITY 2: Coming from Generate Blog - ENABLING');
-      return true;
-    }
-    
-    // PRIORITY 3: If generated in THIS session, only enable if prompt changed
-    if (hasGeneratedInThisSession) {
-      console.log('🔄 PRIORITY 3: Generated in session - enable only if changed:', promptChanged);
-      return promptChanged;
-    }
-    
-    // PRIORITY 4: Direct webhook route - enable only if modified from original
-    if (lastGeneratedPrompt && !isComingFromGenerateBlog) {
-      console.log('🟠 PRIORITY 4: Direct webhook - enable if modified:', promptModifiedFromOriginal);
-      return promptModifiedFromOriginal;
-    }
-    
-    // PRIORITY 5: Default - enable
-    console.log('✅ PRIORITY 5: Default case - ENABLING');
-    return true;
+    // If form data changed or prompt changed, enable
+    return hasFormDataChanged() || finalPrompt.trim() !== lastGeneratedPrompt.trim();
   };
 
-  // Next Page Button Logic - disabled when no content has been generated in current session
+  // Simple Next button logic - like LinkedIn
   const isNextEnabled = () => {
-    if (!hasGeneratedInThisSession) return false;
-    // Also check if prompt hasn't changed since last generation
-    return finalPrompt === lastGeneratedPrompt;
+    // Must have generated content and not have pending changes
+    if (!hasGeneratedOnce || !contextFormData?.webhookResponse) return false;
+    if (hasFormDataChanged()) return false;
+    return true;
   };
 
   const getGenerateButtonStatus = () => {
     if (!finalPrompt.trim()) return "Please enter a prompt";
     if (isGenerating) return "Generating content...";
     
-    const promptChanged = finalPrompt !== lastGeneratedPrompt;
-    const promptModifiedFromOriginal = finalPrompt !== originalPrompt;
-    
-    // PRIORITY 1: Coming from validation
-    if (isComingFromValidation && !promptChanged) {
+    if (hasGeneratedOnce) {
+      if (isComingFromValidation && finalPrompt.trim() === lastGeneratedPrompt.trim()) {
+        return "Content already generated - change prompt to regenerate";
+      }
+      if (hasFormDataChanged()) {
+        return "Form inputs changed - ready to generate new content";
+      }
+      if (finalPrompt.trim() !== lastGeneratedPrompt.trim()) {
+        return "Prompt changed - ready to generate new content";
+      }
       return "Content already generated - change prompt to regenerate";
     }
     
-    // PRIORITY 2: Coming from Generate Blog
-    if (isComingFromGenerateBlog) {
-      return "Ready to generate content from form";
-    }
-    
-    // PRIORITY 3: Generated in this session
-    if (hasGeneratedInThisSession) {
-      if (!promptChanged) {
-        return "Content already generated - change prompt to regenerate";
-      } else {
-        return "Prompt changed - ready to generate new content";
-      }
-    }
-    
-    // PRIORITY 4: Direct webhook route
-    if (lastGeneratedPrompt && !isComingFromGenerateBlog) {
-      if (!promptModifiedFromOriginal) {
-        return "Content already exists - modify prompt to generate new content";
-      } else {
-        return "Prompt modified - ready to generate content";
-      }
-    }
-    
-    // Default
     return "Ready to generate content";
   };
 
   const getNextButtonStatus = () => {
-    if (!hasGeneratedInThisSession) {
-      return "Generate content first to proceed to next page";
-    }
-    if (finalPrompt !== lastGeneratedPrompt) {
-      return "Generate new content first (prompt changed)";
-    }
-    return "Proceed to next page";
+    if (!hasGeneratedOnce) return "Generate content first";
+    if (!contextFormData?.webhookResponse) return "No content generated yet";
+    if (hasFormDataChanged()) return "Generate new content first (inputs changed)";
+    return "Ready to proceed to validation";
   };
 
+  // Simplified submission handler - like LinkedIn
   const handleSubmit = async () => {
-    if (!finalPrompt.trim() || isGenerating) return;
+    if (!isGenerateEnabled()) return;
 
     setIsGenerating(true);
     
@@ -249,23 +156,20 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
       });
       const data = await res.text();
       
-      // Update button states after successful generation
-      if (typeof markAsGenerated === 'function') {
-        markAsGenerated(finalPrompt, { ...formData, finalPrompt });
-      }
-      setHasGeneratedInThisSession(true);
-      setLastGeneratedPrompt(finalPrompt);
-      setIsComingFromGenerateBlog(false); // Reset flag after generation
-      
-      // Clear coming from validation flag since we've generated new content
-      if (setComingFromValidation) {
-        setComingFromValidation(false);
-      }
-      
-      // Update both local formData and context with the generated data
+      // Update context with generated data
       const finalData = { ...formData, finalPrompt, webhookResponse: data };
       if (setContextFormData) {
         setContextFormData(finalData);
+      }
+      
+      // Mark as generated for smart button logic
+      if (markAsGenerated) {
+        markAsGenerated(finalPrompt, finalData);
+      }
+      
+      // Clear coming from validation flag
+      if (setComingFromValidation) {
+        setComingFromValidation(false);
       }
       
       onSubmitForApproval?.(data);
@@ -275,28 +179,27 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
       if (setContextFormData) {
         setContextFormData(errorData);
       }
-      setFinalPrompt('Error: Failed to get response from webhook.');
-      // Update state even on error
-      setHasGeneratedInThisSession(true);
-      setLastGeneratedPrompt(finalPrompt);
-      setIsComingFromGenerateBlog(false); // Reset flag after generation attempt
       
-      // Clear coming from validation flag even on error
-      if (setComingFromValidation) {
-        setComingFromValidation(false);
+      // Mark as generated even on error
+      if (markAsGenerated) {
+        markAsGenerated(finalPrompt, errorData);
       }
+      
+      alert('Error generating content. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Handle next button click
+  // Simplified next button handler - like LinkedIn
   const handleNextClick = () => {
     if (!isNextEnabled() || !onNext) return;
-    // Mark that we're going to validation to preserve session state
-    if (setComingFromValidation) {
-      setComingFromValidation(true);
+    
+    // Use context navigation helper
+    if (navigateToStep) {
+      navigateToStep('validation');
     }
+    
     onNext();
   };
 

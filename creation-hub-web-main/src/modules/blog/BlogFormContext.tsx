@@ -34,7 +34,7 @@ interface BlogFormContextType {
   formData: BlogFormData | null;
   setFormData: (data: BlogFormData) => void;
   resetFormData: () => void;
-  // Smart button logic state
+  // Smart button logic state - simplified like LinkedIn
   hasGeneratedOnce: boolean;
   hasGeneratedInThisSession: boolean;
   lastGeneratedPrompt: string;
@@ -42,13 +42,18 @@ interface BlogFormContextType {
   isComingFromValidation: boolean;
   generatedPrompt: string;
   currentFormState: BlogFormData;
-  // Smart button logic functions
+  // Navigation state
+  currentStep: 'form' | 'prompt' | 'validation';
+  setCurrentStep: (step: 'form' | 'prompt' | 'validation') => void;
+  // Smart button logic functions - simplified like LinkedIn
   markAsGenerated: (prompt: string, formData: BlogFormData) => void;
   setComingFromValidation: (value: boolean) => void;
   resetSession: () => void;
   setGeneratedPrompt: (prompt: string) => void;
   hasFormDataChanged: () => boolean;
   clearGeneratedContent: () => void;
+  // Navigation helpers
+  navigateToStep: (step: 'form' | 'prompt' | 'validation') => void;
 }
 
 const defaultFormData: BlogFormData = {
@@ -85,7 +90,7 @@ const BlogFormContext = createContext<BlogFormContextType | undefined>(undefined
 export const BlogFormProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [formData, setFormDataState] = useState<BlogFormData | null>(null);
   
-  // Smart button logic state
+  // Smart button logic state - simplified like LinkedIn
   const [hasGeneratedOnce, setHasGeneratedOnce] = useState(false);
   const [hasGeneratedInThisSession, setHasGeneratedInThisSession] = useState(false);
   const [lastGeneratedPrompt, setLastGeneratedPrompt] = useState("");
@@ -93,6 +98,8 @@ export const BlogFormProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [isComingFromValidation, setIsComingFromValidation] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [currentFormState, setCurrentFormState] = useState<BlogFormData>(defaultFormData);
+  // Track current step for better navigation control
+  const [currentStep, setCurrentStep] = useState<'form' | 'prompt' | 'validation'>('form');
 
   const setFormData = (data: BlogFormData) => {
     setFormDataState(data);
@@ -125,6 +132,16 @@ export const BlogFormProvider: React.FC<{ children: ReactNode }> = ({ children }
     // Clear the generated content when form data changes
     if (formData) {
       setFormDataState(prev => prev ? ({ ...prev, webhookResponse: '' }) : null);
+    }
+  };
+
+  // Navigation helpers - simplified like LinkedIn
+  const navigateToStep = (step: 'form' | 'prompt' | 'validation') => {
+    setCurrentStep(step);
+    if (step === 'validation') {
+      setIsComingFromValidation(true);
+    } else {
+      setIsComingFromValidation(false);
     }
   };
 
@@ -173,12 +190,15 @@ export const BlogFormProvider: React.FC<{ children: ReactNode }> = ({ children }
     isComingFromValidation,
     generatedPrompt,
     currentFormState,
+    currentStep,
+    setCurrentStep,
     markAsGenerated,
     setComingFromValidation,
     resetSession,
     setGeneratedPrompt,
     hasFormDataChanged,
-    clearGeneratedContent
+    clearGeneratedContent,
+    navigateToStep
   };
 
   return (

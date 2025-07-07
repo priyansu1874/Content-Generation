@@ -95,7 +95,8 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
     markAsGenerated,
     lastGeneratedPrompt,
     generatedPrompt,
-    clearGeneratedContent
+    clearGeneratedContent,
+    setComingFromValidation
   } = blogFormContext;
 
   const [openSections, setOpenSections] = useState({
@@ -215,12 +216,16 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
     return "Ready to generate prompt";
   };
 
-  // Handle next button click
+  // Handle next button click - simple navigation only
   const handleNextClick = () => {
     if (!isNextEnabled()) return;
     
     const contextFormData = blogFormContext.formData;
     if (contextFormData && onNext) {
+      // Clear any validation flags before navigation to ensure clean state for next page
+      if (setComingFromValidation) {
+        setComingFromValidation(false);
+      }
       onNext(contextFormData);
     }
   };

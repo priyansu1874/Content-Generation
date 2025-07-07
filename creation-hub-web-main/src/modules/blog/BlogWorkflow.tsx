@@ -15,51 +15,31 @@ type BlogFormGeneratorNextData = Parameters<BlogFormGeneratorProps['onNext']>[0]
 
 const BlogWorkflowInner = ({ onBack }: BlogWorkflowProps) => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState<'form' | 'prompt' | 'validation'>('form');
   const [blogFormData, setBlogFormData] = useState<BlogFormGeneratorNextData | null>(null);
   const [finalContent, setFinalContent] = useState<string>('');
-  const { setComingFromValidation } = useBlogForm();
+  const { currentStep, navigateToStep } = useBlogForm();
 
   const handleFormNext = (data: BlogFormGeneratorNextData) => {
     setBlogFormData(data);
-    // Clear the coming from validation flag when navigating from form to prompt
-    if (setComingFromValidation) {
-      setComingFromValidation(false);
-    }
-    setCurrentStep('prompt');
+    navigateToStep('prompt');
   };
 
   const handlePromptSubmitForApproval = (content: string) => {
     setFinalContent(content);
-    setCurrentStep('validation');
+    navigateToStep('validation');
   };
 
   const handleValidationPost = () => {
-    // Handle the post action
     console.log('Posting content:', finalContent);
-    // Return to dashboard after successful completion
     navigate('/dashboard');
   };
 
   const handlePromptBack = () => {
-    // Clear the coming from validation flag when navigating from prompt to form
-    if (setComingFromValidation) {
-      setComingFromValidation(false);
-    }
-    setCurrentStep('form');
+    navigateToStep('form');
   };
 
   const handleValidationBack = () => {
-    // Set the flag to indicate we're coming back from validation
-    if (setComingFromValidation) {
-      setComingFromValidation(true);
-    }
-    setCurrentStep('prompt');
-  };
-
-  const handleValidationComplete = () => {
-    // Return to dashboard after successful completion
-    navigate('/dashboard');
+    navigateToStep('prompt');
   };
 
   const handleBackToDashboard = () => {
@@ -88,7 +68,7 @@ const BlogWorkflowInner = ({ onBack }: BlogWorkflowProps) => {
             systemPrompt={blogFormData?.webhookResponse || ''}
             onSubmitForApproval={handlePromptSubmitForApproval}
             onBack={handlePromptBack}
-            onNext={() => setCurrentStep('validation')}
+            onNext={() => navigateToStep('validation')}
           />
         );
       
