@@ -147,16 +147,6 @@ const ContentRepository = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    return status === 'published' 
-      ? 'bg-green-100 text-green-800'
-      : status === 'draft'
-      ? 'bg-gray-100 text-gray-800'
-      : status === 'in-progress'
-      ? 'bg-yellow-100 text-yellow-800'
-      : 'bg-gray-100 text-gray-800';
-  };
-
   const handleSort = (field: 'date' | 'title' | 'type') => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -346,9 +336,6 @@ const ContentRepository = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge className={getStatusColor(item.status)}>
-                        {item.status}
-                      </Badge>
                       <Button 
                         size="sm" 
                         variant="outline" 
