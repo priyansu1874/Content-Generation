@@ -47,10 +47,6 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
         ? `<h1 class="text-5xl md:text-6xl font-extrabold mb-4 text-gray-900">${blog.title || meta.title}</h1>`
         : '';
 
-      const description = meta.description
-        ? `<div class="text-base md:text-lg italic text-gray-500 mb-4">${meta.description}</div>`
-        : '';
-
       const introHtml = blog.intro
         ? `<p class="text-lg md:text-xl text-gray-800 mb-4">${blog.intro}</p>`
         : '';
@@ -190,7 +186,6 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
           ${title}
           ${metaInfoForDocx}
           ${metaInfoHtml}
-          ${description}
           ${introductionWithTitle}
           ${bodyHtml}
           ${quotesHtml}
@@ -352,11 +347,6 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
                       content.push(`Meta Title: ${meta.title || '-'}\n`);
                       content.push(`Slug: ${meta.slug || '-'}\n`);
                       content.push(`Meta Description: ${meta.description || '-'}\n\n`);
-
-                      // Add meta description
-                      if (meta.description) {
-                        content.push(`*${meta.description}*\n\n`);
-                      }
 
                       // Add introduction with title
                       if (blog.intro) {
