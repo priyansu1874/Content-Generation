@@ -24,6 +24,7 @@ interface BlogFormData {
   categories: string[];
   tags: string[];
   targetAudience: string;
+  organization: string;
   primaryGoal: string;
   toneOfVoice: string;
   wordCountRange: string;
@@ -63,6 +64,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
       categories: [],
       tags: [],
       targetAudience: '',
+      organization: '',
       primaryGoal: '',
       toneOfVoice: '',
       wordCountRange: '',
@@ -241,6 +243,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
         categories: [],
         tags: [],
         targetAudience: '',
+        organization: '',
         primaryGoal: '',
         toneOfVoice: '',
         wordCountRange: '',
@@ -433,6 +436,26 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
                         className="border-gray-200 focus:border-green-500 focus:ring-green-500/20"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">Organization</Label>
+                      <Select
+                        value={formData.organization}
+                        onValueChange={(value) => updateFormData({ organization: value })}
+                      >
+                        <SelectTrigger className="border-gray-200">
+                          <SelectValue placeholder="Select organization" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="General">General</SelectItem>
+                          <SelectItem value="Mobio Solutions">Mobio Solutions</SelectItem>
+                          <SelectItem value="GetOnCrmSolution">GetOnCrmSolution</SelectItem>
+                          <SelectItem value="GetOnDataSolutions">GetOnDataSolutions</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-700">Primary Goal</Label>
                       <Select

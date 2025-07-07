@@ -9,6 +9,7 @@ interface BlogFormData {
   categories: string[];
   tags: string[];
   targetAudience: string;
+  organization: string;
   primaryGoal: string;
   toneOfVoice: string;
   wordCountRange: string;
@@ -59,6 +60,7 @@ const defaultFormData: BlogFormData = {
   categories: [],
   tags: [],
   targetAudience: '',
+  organization: '',
   primaryGoal: '',
   toneOfVoice: '',
   wordCountRange: '',
