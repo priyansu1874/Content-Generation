@@ -50,8 +50,10 @@ const BlogWorkflowInner = ({ onBack }: BlogWorkflowProps) => {
   };
 
   const handleValidationBack = () => {
-    // Simply navigate back to the prompt page
-    // The setComingFromValidation flag will be set by ContentValidation component
+    // Set the flag to indicate we're coming back from validation
+    if (setComingFromValidation) {
+      setComingFromValidation(true);
+    }
     setCurrentStep('prompt');
   };
 

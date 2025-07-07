@@ -151,8 +151,9 @@ export const BlogFormProvider: React.FC<{ children: ReactNode }> = ({ children }
       JSON.stringify(formData.creativityLevel) !== JSON.stringify(lastGeneratedFormData.creativityLevel) ||
       formData.template !== lastGeneratedFormData.template ||
       formData.language !== lastGeneratedFormData.language ||
-      formData.includeQuotes !== lastGeneratedFormData.includeQuotes ||
-      formData.finalPrompt !== lastGeneratedFormData.finalPrompt
+      formData.includeQuotes !== lastGeneratedFormData.includeQuotes
+      // Note: finalPrompt is excluded from comparison as it's not a form input field
+      // but rather a derived/generated field that gets edited separately
     );
 
     return hasChanged;
