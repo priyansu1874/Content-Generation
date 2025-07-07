@@ -149,17 +149,25 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
       const metaInfoHtml = `
         <div class="bg-gray-50 p-6 rounded-lg mb-8 border border-gray-200">
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Meta Information</h2>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="text-gray-600">Meta Title:</div>
-            <div class="font-medium">${meta.title || '-'}</div>
-            <div class="text-gray-600">Slug:</div>
-            <div class="font-medium">${meta.slug || '-'}</div>
+          <div class="grid grid-cols-1 gap-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="text-gray-600">Meta Title:</div>
+              <div class="font-medium">${meta.title || '-'}</div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="text-gray-600">Slug:</div>
+              <div class="font-medium">${meta.slug || '-'}</div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="text-gray-600">Meta Description:</div>
+              <div class="font-medium">${meta.description || '-'}</div>
+            </div>
           </div>
         </div>
       `;
 
       // Format meta information for DOCX export
-      const metaInfoForDocx = `META_INFO:Meta Title:${meta.title || '-'} | Slug:${meta.slug || '-'}\n\n`;
+      const metaInfoForDocx = `META_INFO:Meta Title:${meta.title || '-'} | Slug:${meta.slug || '-'} | Meta Description:${meta.description || '-'}\n\n`;
 
       // Add section titles
       const introductionWithTitle = blog.intro
@@ -342,7 +350,8 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
                       // Add meta information
                       content.push(`## Meta Information\n\n`);
                       content.push(`Meta Title: ${meta.title || '-'}\n`);
-                      content.push(`Slug: ${meta.slug || '-'}\n\n`);
+                      content.push(`Slug: ${meta.slug || '-'}\n`);
+                      content.push(`Meta Description: ${meta.description || '-'}\n\n`);
 
                       // Add meta description
                       if (meta.description) {

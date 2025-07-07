@@ -14,7 +14,7 @@ export function useGeneratePrompt(): UseGeneratePromptResult {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://mobiosolutions.app.n8n.cloud/webhook/carousel-generate-content', {
+      const response = await fetch('https://priyansu4781.app.n8n.cloud/webhook/carousel-generate-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
