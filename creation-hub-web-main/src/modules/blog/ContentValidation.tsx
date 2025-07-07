@@ -7,6 +7,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { ArrowLeft, FileCheck, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DownloadDocxButton from './DownloadDocxButton';
+import { useBlogForm } from './BlogFormContext';
 
 interface ContentValidationProps {
   onBack: () => void;
@@ -20,6 +21,7 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
   const [postSuccess, setPostSuccess] = useState(false);
   const [finalPrompt, setFinalPrompt] = useState('');
   const navigate = useNavigate();
+  const { setComingFromValidation } = useBlogForm();
 
   useEffect(() => {
     setGeneratedContent(prompt);
@@ -317,7 +319,12 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
             </div>
             <div className="flex flex-wrap gap-4 justify-between mt-8">
               <Button
-                onClick={onBack}
+                onClick={() => {
+                  if (setComingFromValidation) {
+                    setComingFromValidation(true);
+                  }
+                  onBack();
+                }}
                 variant="outline"
                 className="border-gray-300 hover:bg-gray-50 px-8 py-4 text-lg font-medium"
                 size="lg"

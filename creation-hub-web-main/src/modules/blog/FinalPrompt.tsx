@@ -32,7 +32,10 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
     hasGeneratedOnce, 
     hasFormDataChanged, 
     generatedPrompt,
-    markAsGenerated
+    markAsGenerated,
+    resetSession,
+    isComingFromValidation,
+    setComingFromValidation
   } = blogFormContext || {};
 
   useEffect(() => {
@@ -74,13 +77,21 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
     }
   }, [formData]);
   
-  // Initialize state if we have existing content
+  // Reset session state when coming from form (not from validation)
   useEffect(() => {
-    if (formData?.webhookResponse?.trim() && finalPrompt.trim() && !hasGeneratedInThisSession) {
+    if (!isComingFromValidation && resetSession) {
+      resetSession();
+      setHasGeneratedInThisSession(false);
+    }
+  }, [isComingFromValidation, resetSession]);
+  
+  // Initialize state if we have existing content and we're coming from validation
+  useEffect(() => {
+    if (formData?.webhookResponse?.trim() && finalPrompt.trim() && isComingFromValidation) {
       setHasGeneratedInThisSession(true);
       setLastGeneratedPrompt(finalPrompt.trim());
     }
-  }, [formData?.webhookResponse, finalPrompt, hasGeneratedInThisSession]);
+  }, [formData?.webhookResponse, finalPrompt, isComingFromValidation]);
 
   // Generate Button Logic - disabled when prompt is empty OR content was already generated with current prompt
   const isGenerateEnabled = () => {
@@ -164,6 +175,10 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
   // Handle next button click
   const handleNextClick = () => {
     if (!isNextEnabled() || !onNext) return;
+    // Mark that we're going to validation to preserve session state
+    if (setComingFromValidation) {
+      setComingFromValidation(true);
+    }
     onNext();
   };
 

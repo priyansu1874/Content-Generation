@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BlogFormGenerator, { BlogFormGeneratorProps } from '@/modules/blog/BlogFormGenerator';
 import FinalPrompt from '@/modules/blog/FinalPrompt';
 import ContentValidation from '@/modules/blog/ContentValidation';
-import { BlogFormProvider } from '@/modules/blog/BlogFormContext';
+import { BlogFormProvider, useBlogForm } from '@/modules/blog/BlogFormContext';
 import { Button } from '@/shared/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -13,14 +13,19 @@ interface BlogWorkflowProps {
 
 type BlogFormGeneratorNextData = Parameters<BlogFormGeneratorProps['onNext']>[0];
 
-const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
+const BlogWorkflowInner = ({ onBack }: BlogWorkflowProps) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<'form' | 'prompt' | 'validation'>('form');
   const [blogFormData, setBlogFormData] = useState<BlogFormGeneratorNextData | null>(null);
   const [finalContent, setFinalContent] = useState<string>('');
+  const { setComingFromValidation } = useBlogForm();
 
   const handleFormNext = (data: BlogFormGeneratorNextData) => {
     setBlogFormData(data);
+    // Clear the coming from validation flag when navigating from form to prompt
+    if (setComingFromValidation) {
+      setComingFromValidation(false);
+    }
     setCurrentStep('prompt');
   };
 
@@ -37,11 +42,16 @@ const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
   };
 
   const handlePromptBack = () => {
+    // Clear the coming from validation flag when navigating from prompt to form
+    if (setComingFromValidation) {
+      setComingFromValidation(false);
+    }
     setCurrentStep('form');
   };
 
   const handleValidationBack = () => {
     // Simply navigate back to the prompt page
+    // The setComingFromValidation flag will be set by ContentValidation component
     setCurrentStep('prompt');
   };
 
@@ -95,10 +105,16 @@ const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
   };
 
   return (
+    <div className="max-w-6xl mx-auto p-4">
+      {renderCurrentStep()}
+    </div>
+  );
+};
+
+const BlogWorkflow = ({ onBack }: BlogWorkflowProps) => {
+  return (
     <BlogFormProvider>
-      <div className="max-w-6xl mx-auto p-4">
-        {renderCurrentStep()}
-      </div>
+      <BlogWorkflowInner onBack={onBack} />
     </BlogFormProvider>
   );
 };
