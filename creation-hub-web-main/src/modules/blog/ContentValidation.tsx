@@ -32,6 +32,9 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
       const intro = blog.intro || '';
       const conclusion = blog.conclusion || '';
       const cta = blog.cta || '';
+      const quotes = blog.quotes || blog.quote || data.quotes || data.quote || [];
+      // Ensure quotes is always an array
+      const quotesArray = Array.isArray(quotes) ? quotes : (quotes ? [quotes] : []);
       const tags = Array.isArray(data.tags) ? data.tags : [];
 
       // We'll only keep the metaInfoHtml declaration at the end of the function
@@ -114,6 +117,34 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
           </div>`
         : '';
 
+      // Add quotes section
+      const quotesHtml = quotesArray && quotesArray.length > 0
+        ? `<div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Key Quotes & Insights</h2>
+            ${quotesArray.map(quote => {
+              if (typeof quote === 'string') {
+                return `<blockquote class="border-l-4 border-blue-500 pl-6 py-4 mb-4 bg-blue-50 rounded-r-lg">
+                  <p class="text-lg italic text-gray-800">"${quote}"</p>
+                </blockquote>`;
+              } else if (quote && typeof quote === 'object') {
+                return `<blockquote class="border-l-4 border-blue-500 pl-6 py-4 mb-4 bg-blue-50 rounded-r-lg">
+                  <p class="text-lg italic text-gray-800">"${quote.text || quote.quote || ''}"</p>
+                  ${quote.author ? `<cite class="block text-sm text-gray-600 mt-2 font-medium">— ${quote.author}</cite>` : ''}
+                  ${quote.source ? `<cite class="block text-xs text-gray-500">${quote.source}</cite>` : ''}
+                </blockquote>`;
+              }
+              return '';
+            }).join('')}
+          </div>`
+        : '';
+
+      // Debug: Let's also check if quotes exist and log them
+      if (quotesArray && quotesArray.length > 0) {
+        console.log('Found quotes:', quotesArray);
+      } else {
+        console.log('No quotes found. Blog quotes:', blog.quotes, 'Blog quote:', blog.quote, 'Data quotes:', data.quotes, 'Data quote:', data.quote);
+      }
+
       // Add meta information section
       const metaInfoHtml = `
         <div class="bg-gray-50 p-6 rounded-lg mb-8 border border-gray-200">
@@ -154,6 +185,7 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
           ${description}
           ${introductionWithTitle}
           ${bodyHtml}
+          ${quotesHtml}
           ${conclusionWithTitle}
           ${ctaHtml}
           ${tagsHtml}
@@ -180,6 +212,9 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
       }
       
       console.log('Blog data:', blogData);
+      console.log('Blog data structure - blog:', blogData.blog);
+      console.log('Blog data structure - quotes in blog:', blogData.blog?.quotes);
+      console.log('Blog data structure - quotes in root:', blogData.quotes);
       
       if (!blogData || (typeof blogData !== 'object')) {
         throw new Error('Invalid blog data structure');
@@ -351,9 +386,33 @@ const ContentValidation: React.FC<ContentValidationProps> = ({ onBack, onPost, p
                         content.push(`${blog.body.text}\n\n`);
                       }
 
-                      // Add conclusion
+                      // Add quotes section
+                      const quotes = blog.quotes || blog.quote || blogData.quotes || blogData.quote || [];
+                      // Ensure quotes is always an array
+                      const quotesArray = Array.isArray(quotes) ? quotes : (quotes ? [quotes] : []);
+                      if (quotesArray && quotesArray.length > 0) {
+                        content.push(`## Key Quotes & Insights\n\n`);
+                        quotesArray.forEach(quote => {
+                          if (typeof quote === 'string') {
+                            content.push(`> "${quote}"\n\n`);
+                          } else if (quote && typeof quote === 'object') {
+                            content.push(`> "${quote.text || quote.quote || ''}"\n`);
+                            if (quote.author) {
+                              content.push(`> — ${quote.author}\n`);
+                            }
+                            if (quote.source) {
+                              content.push(`> *${quote.source}*\n`);
+                            }
+                            content.push(`\n`);
+                          }
+                        });
+                        content.push(`\n`);
+                      }
+
+                      // Add conclusion with title
                       if (blog.conclusion) {
-                        content.push(`---\n\n${blog.conclusion}\n\n`);
+                        content.push(`## Conclusion\n\n`);
+                        content.push(`${blog.conclusion}\n\n`);
                       }
 
                       // Add CTA
