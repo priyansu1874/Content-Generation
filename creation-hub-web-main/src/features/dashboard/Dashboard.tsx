@@ -439,28 +439,28 @@ const Dashboard = () => {
                   <div className="p-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Heading3 className="text-lg font-semibold text-gray-900">
-                            {item.title}
-                          </Heading3>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={e => { e.stopPropagation(); setViewItem(item as unknown as Record<string, unknown>); }}
-                            className="h-6 px-2 text-xs"
-                          >
-                            View
-                          </Button>
-                        </div>
+                        <Heading3 className="text-lg font-semibold text-gray-900 mb-2">
+                          {item.title}
+                        </Heading3>
                         <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                           <span>{item.type}</span>
                           <span>•</span>
                           <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}</span>
                         </div>
                       </div>
-                      <Badge className={getStatusColor(item.status)}>
-                        {item.status}
-                      </Badge>
+                      <div className="flex items-center gap-3">
+                        <Badge className={getStatusColor(item.status)}>
+                          {item.status}
+                        </Badge>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={e => { e.stopPropagation(); setViewItem(item as unknown as Record<string, unknown>); }}
+                          className="px-4 py-2"
+                        >
+                          View
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 }
