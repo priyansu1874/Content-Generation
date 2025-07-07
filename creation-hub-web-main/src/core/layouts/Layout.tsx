@@ -20,7 +20,7 @@ const Layout = ({ children, showHeader = true }: LayoutProps) => {
   };
 
   return !showHeader ? (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">{children}</div>
+    <div>{children}</div>
   ) : (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <header className="bg-white shadow-sm border-b">
