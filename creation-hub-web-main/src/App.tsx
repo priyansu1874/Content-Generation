@@ -14,6 +14,7 @@ import RepositoryPage from "./pages/RepositoryPage";
 import CarouselPage from "./pages/CarouselPage";
 import ProtectedRoute from "./core/routing/ProtectedRoute";
 import NotFound from "./core/routing/NotFound";
+import DatabaseInspector from "./components/DatabaseInspector";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
               <RepositoryPage />
             </ProtectedRoute>
           } />
+          <Route path="/db-inspector" element={<DatabaseInspector />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

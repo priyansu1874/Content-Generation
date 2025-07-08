@@ -8,6 +8,7 @@ import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Heading1, Heading3, Heading4 } from '@/shared/components/typography';
 import { ArrowLeft, Search, Filter, Calendar, ArrowUpDown, X, Globe, Linkedin, Mail, FileText, Facebook, Image, Twitter, Brain } from 'lucide-react';
 import { supabase } from '@/config/supabaseClient';
+import DOMPurify from 'dompurify';
 
 interface ContentItem {
   id: string;
@@ -26,7 +27,6 @@ const ContentRepository = () => {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   // Remove content table from repository
   const [blogContent, setBlogContent] = useState<ContentItem[]>([]);
-  const [carouselContent, setCarouselContent] = useState<ContentItem[]>([]);
   const [linkedinContent, setLinkedinContent] = useState<ContentItem[]>([]);
   const [technicalArticleContent, setTechnicalArticleContent] = useState<ContentItem[]>([]);
   const [viewItem, setViewItem] = useState<Record<string, unknown> | null>(null);
@@ -61,7 +61,6 @@ const ContentRepository = () => {
     // Helper to map table name to type
     const tableTypeMap = {
       'website_blog': 'Website Blog',
-      'carousel': 'Carousel',
       'Content Post Information': 'Content Post Information',
       'technical_article_content': 'Technical Article Content',
     };
@@ -74,14 +73,7 @@ const ContentRepository = () => {
         createdAt: row.createdAt || row.created_at || '',
       })));
     };
-    const fetchCarouselContent = async () => {
-      const { data, error } = await supabase.from('carousel').select('*');
-      if (!error) setCarouselContent((data || []).map(row => ({
-        ...row,
-        type: tableTypeMap['carousel'],
-        createdAt: row.createdAt || row.created_at || '',
-      })));
-    };
+    
     const fetchLinkedinContent = async () => {
       const { data, error } = await supabase.from('Content Post Information').select('*');
       if (!error) setLinkedinContent((data || []).map(row => ({
@@ -90,6 +82,7 @@ const ContentRepository = () => {
         createdAt: row.createdAt || row.created_at || '',
       })));
     };
+    
     const fetchTechnicalArticleContent = async () => {
       const { data, error } = await supabase.from('technical_article_content').select('*');
       if (!error) setTechnicalArticleContent((data || []).map(row => ({
@@ -98,8 +91,8 @@ const ContentRepository = () => {
         createdAt: row.createdAt || row.created_at || '',
       })));
     };
+    
     fetchBlogContent();
-    fetchCarouselContent();
     fetchLinkedinContent();
     fetchTechnicalArticleContent();
   }, []);
@@ -109,7 +102,6 @@ const ContentRepository = () => {
   // Combine all fetched content into one array
   const allContent = [
     ...blogContent,
-    ...carouselContent,
     ...linkedinContent,
     ...technicalArticleContent
   ];
@@ -153,6 +145,355 @@ const ContentRepository = () => {
     } else {
       setSortBy(field);
       setSortOrder('desc');
+    }
+  };
+
+  // Content renderers based on actual database columns
+  const ContentRenderers = {
+    'Website Blog': (item: Record<string, unknown>) => {
+      // Columns: title, Slug, metaTitle, metaDescription, introduction, body, callToAction, Propmt, quote, Tags, generatedContent
+      const body = item.body as string;
+      const introduction = item.introduction as string;
+      const callToAction = item.callToAction as string;
+      const tags = item.Tags as string;
+      
+      return (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-6 border border-blue-100">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{item.title as string}</h1>
+            <div className="flex gap-4 text-sm text-gray-600 mb-4">
+              <span>📅 {item.created_at ? new Date(item.created_at as string).toLocaleDateString() : 'No date'}</span>
+              <span>🏷️ Blog Post</span>
+              <span>📝 {item.Slug as string}</span>
+            </div>
+            {item.metaDescription && (
+              <p className="text-lg text-gray-600 italic">{item.metaDescription as string}</p>
+            )}
+          </div>
+          
+          <div className="prose prose-lg max-w-none bg-white rounded-lg p-6 shadow-sm">
+            {introduction && (
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">Introduction</h2>
+                <p className="text-gray-700 leading-relaxed">{introduction}</p>
+              </div>
+            )}
+            
+            {body && (
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">Content</h2>
+                <div className="text-gray-700">
+                  {(() => {
+                    try {
+                      const bodyContent = JSON.parse(body);
+                      if (Array.isArray(bodyContent)) {
+                        return bodyContent.map((section: any, index: number) => (
+                          <div key={index} className="mb-4">
+                            {section.title && <h3 className="text-xl font-semibold mb-2">{section.title}</h3>}
+                            {section.text && <p className="leading-relaxed">{section.text}</p>}
+                          </div>
+                        ));
+                      }
+                      return <p>{JSON.stringify(bodyContent, null, 2)}</p>;
+                    } catch {
+                      return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }} />;
+                    }
+                  })()}
+                </div>
+              </div>
+            )}
+            
+            {callToAction && (
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h2 className="text-xl font-bold text-blue-800 mb-2">Call to Action</h2>
+                <p className="text-blue-700">{callToAction}</p>
+              </div>
+            )}
+            
+            {tags && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                {(() => {
+                  try {
+                    const tagArray = JSON.parse(tags);
+                    return Array.isArray(tagArray) ? tagArray.map((tag: string, index: number) => (
+                      <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800">
+                        {tag}
+                      </Badge>
+                    )) : null;
+                  } catch {
+                    return <Badge variant="secondary">{tags}</Badge>;
+                  }
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    },
+
+    'Content Post Information': (item: Record<string, unknown>) => {
+      // Columns: Post Description, Special Instructions, title, Target Audience, Persona, Post Length, Content Tone, Include CTA, Add Summary Analytics, Include Hashtags, Image Url, Main Prompt, Posted As
+      const postDescription = item['Post Description'] as string;
+      const targetAudience = item['Target Audience'] as string;
+      const contentTone = item['Content Tone'] as string;
+      const persona = item.Persona as string;
+      const postLength = item['Post Length'] as string;
+      
+      return (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">LinkedIn Post</h2>
+            <div className="flex gap-4 text-sm text-gray-600 mb-4">
+              <span>📅 {item.created_at ? new Date(item.created_at as string).toLocaleDateString() : 'No date'}</span>
+              <span>👥 {targetAudience || 'Professional'}</span>
+              <span>🎨 {contentTone || 'Professional'}</span>
+            </div>
+          </div>
+          
+          {/* LinkedIn-style post preview */}
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm max-w-2xl">
+            <div className="p-6">
+              <div className="flex items-start space-x-3 mb-4">
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold">
+                    {persona ? persona.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-gray-900">
+                    {persona || 'Your Name'}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {targetAudience || 'Professional'} • Now
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <div className="text-gray-900 whitespace-pre-line leading-relaxed">
+                  {postDescription || 'No content available.'}
+                </div>
+              </div>
+
+              {item['Image Url'] && (
+                <div className="mb-4">
+                  <div className="bg-gray-100 rounded-lg p-4 text-center text-gray-500">
+                    📷 Image attachment included
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t pt-3">
+                <div className="flex items-center justify-between text-gray-500">
+                  <span className="flex items-center space-x-2">
+                    <span>👍</span>
+                    <span>Like</span>
+                  </span>
+                  <span className="flex items-center space-x-2">
+                    <span>💬</span>
+                    <span>Comment</span>
+                  </span>
+                  <span className="flex items-center space-x-2">
+                    <span>🔄</span>
+                    <span>Repost</span>
+                  </span>
+                  <span className="flex items-center space-x-2">
+                    <span>📤</span>
+                    <span>Send</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Additional details */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-800 mb-3">Post Details</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><strong>Length:</strong> {postLength || 'Not specified'}</div>
+              <div><strong>Tone:</strong> {contentTone || 'Professional'}</div>            <div><strong>CTA:</strong> {(item['Include CTA'] as string) || 'Not specified'}</div>
+            <div><strong>Hashtags:</strong> {(item['Include Hashtags'] as string) || 'Not specified'}</div>
+            </div>
+            {item['Special Instructions'] && (
+              <div className="mt-3">
+                <strong>Special Instructions:</strong>
+                <p className="text-gray-600 mt-1">{item['Special Instructions'] as string}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    },
+
+    'Technical Article Content': (item: Record<string, unknown>) => {
+      // Columns: organizationName, title, targetAudience, technologyFocus, toneOfArticle, articleObjective, keywords, authorName, exampleReference, prompt, generatedContent
+      const generatedContent = item.generatedContent as string;
+      const organizationName = item.organizationName as string;
+      const targetAudience = item.targetAudience as string;
+      const technologyFocus = item.technologyFocus as string;
+      const toneOfArticle = item.toneOfArticle as string;
+      const articleObjective = item.articleObjective as string;
+      const keywords = item.keywords as string;
+      
+      const extractValue = (field: string, value: string) => {
+        const regex = new RegExp(`^${field.replace(/_/g, ' ')}:?\\s*`, 'i');
+        return value.replace(regex, '').trim();
+      };
+
+      let contentObj: any = null;
+      try {
+        if (generatedContent) {
+          contentObj = JSON.parse(generatedContent);
+        }
+      } catch {
+        // Content is not JSON, use as plain text
+      }
+
+      return (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border border-purple-100">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{item.title as string}</h2>
+                <div className="flex gap-4 text-sm text-gray-600">
+                  <span>📅 {item.created_at ? new Date(item.created_at as string).toLocaleDateString() : 'No date'}</span>
+                  <span>🏢 {organizationName}</span>
+                  <span>🔧 {(() => {
+                    try {
+                      const techArray = JSON.parse(technologyFocus);
+                      return Array.isArray(techArray) ? techArray.join(', ') : technologyFocus;
+                    } catch {
+                      return technologyFocus;
+                    }
+                  })()}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Badge variant="outline">{toneOfArticle}</Badge>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <strong>Target Audience:</strong> {(() => {
+                  try {
+                    const audienceArray = JSON.parse(targetAudience);
+                    return Array.isArray(audienceArray) ? audienceArray.join(', ') : targetAudience;
+                  } catch {
+                    return targetAudience;
+                  }
+                })()}
+              </div>
+              <div>
+                <strong>Keywords:</strong> {(() => {
+                  try {
+                    const keywordArray = JSON.parse(keywords);
+                    return Array.isArray(keywordArray) ? keywordArray.join(', ') : keywords;
+                  } catch {
+                    return keywords;
+                  }
+                })()}
+              </div>
+            </div>
+            
+            {articleObjective && (
+              <div className="mt-4">
+                <strong>Objective:</strong>
+                <p className="text-gray-700 mt-1">{articleObjective}</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="prose prose-slate max-w-none bg-white rounded-lg p-6 shadow-sm">
+            {contentObj ? (
+              <div>
+                {contentObj.title && (
+                  <h1 className="text-4xl font-extrabold text-slate-900 mb-6">{extractValue('title', contentObj.title)}</h1>
+                )}
+                {contentObj.introduction && (
+                  <section className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-3">Introduction</h2>
+                    <div className="text-slate-700 leading-relaxed">{extractValue('introduction', contentObj.introduction)}</div>
+                  </section>
+                )}
+                {contentObj.background && (
+                  <section className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-3">Background</h2>
+                    <div className="text-slate-700 leading-relaxed">{extractValue('background', contentObj.background)}</div>
+                  </section>
+                )}
+                {contentObj.technology_focus && (
+                  <section className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-3">Technology Focus</h2>
+                    <div className="text-slate-700 leading-relaxed">{extractValue('technology focus', contentObj.technology_focus)}</div>
+                  </section>
+                )}
+                {contentObj.use_case && (
+                  <section className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-3">Use Case</h2>
+                    <div className="text-slate-700 leading-relaxed">{extractValue('use case', contentObj.use_case)}</div>
+                  </section>
+                )}
+                {contentObj.business_benefits && (
+                  <section className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-3">Business Benefits</h2>
+                    <div className="text-slate-700 leading-relaxed">{extractValue('business benefits', contentObj.business_benefits)}</div>
+                  </section>
+                )}
+                {contentObj.considerations && (
+                  <section className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-3">Considerations</h2>
+                    <div className="text-slate-700 leading-relaxed">{extractValue('considerations', contentObj.considerations)}</div>
+                  </section>
+                )}
+                {contentObj.conclusion && (
+                  <section className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-3">Conclusion</h2>
+                    <div className="text-slate-700 leading-relaxed">{extractValue('conclusion', contentObj.conclusion)}</div>
+                  </section>
+                )}
+              </div>
+            ) : (
+              <div className="text-slate-700">
+                {generatedContent || 'No content generated yet.'}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    },
+
+    // Default fallback renderer for unknown types
+    default: (item: Record<string, unknown>) => {
+      return (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-6 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{(item.title as string) || 'Content'}</h2>
+            <div className="flex gap-4 text-sm text-gray-600 mb-4">
+              <span>📅 {item.created_at ? new Date(item.created_at as string).toLocaleDateString() : 'No date'}</span>
+              <span>📄 {(item.type as string) || 'Content'}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            {Object.entries(item).map(([key, value]) => (
+              <div key={key} className="flex flex-col gap-1 bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                <span className="font-semibold text-gray-700 text-base capitalize mb-1 tracking-wide">{key.replace(/_/g, ' ')}</span>
+                <span className="text-gray-900 text-sm break-words">
+                  {key.toLowerCase().includes('date') || key.toLowerCase().includes('created')
+                    ? (value ? new Date(value as string).toLocaleString() : '-')
+                    : typeof value === 'boolean'
+                      ? value ? 'Yes' : 'No'
+                      : value === null || value === undefined || value === ''
+                        ? '-'
+                        : typeof value === 'object'
+                          ? <pre className="bg-gray-100 rounded p-2 text-xs overflow-x-auto max-w-full whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
+                          : value.toString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
     }
   };
 
@@ -351,16 +692,16 @@ const ContentRepository = () => {
             />
           ))
         )}
-        {/* Modal for viewing all fields of a row */}
+        {/* Modal for viewing content with type-specific formatting */}
         {viewItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setViewItem(null)}>
             <div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-0 relative animate-fade-in border border-gray-200 overflow-hidden"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] p-0 relative animate-fade-in border border-gray-200 overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
               {/* Header Bar */}
               <div className="flex items-center justify-between px-8 py-6 bg-gradient-to-r from-blue-600 to-cyan-500 border-b border-gray-100">
-                <Heading3 className="text-white text-2xl font-bold">Content Details</Heading3>
+                <Heading3 className="text-white text-2xl font-bold">Content Preview</Heading3>
                 <button
                   className="text-white hover:text-gray-200 transition-colors"
                   onClick={() => setViewItem(null)}
@@ -370,25 +711,12 @@ const ContentRepository = () => {
                 </button>
               </div>
               {/* Content Body */}
-              <div className="px-8 py-8 bg-gray-50 max-h-[70vh] overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                  {Object.entries(viewItem).map(([key, value]) => (
-                    <div key={key} className="flex flex-col gap-1 bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-                      <span className="font-semibold text-gray-700 text-base capitalize mb-1 tracking-wide">{key.replace(/_/g, ' ')}</span>
-                      <span className="text-gray-900 text-sm break-words">
-                        {key.toLowerCase().includes('date') || key.toLowerCase().includes('created')
-                          ? (value ? new Date(value as string).toLocaleString() : '-')
-                          : typeof value === 'boolean'
-                            ? value ? 'Yes' : 'No'
-                            : value === null || value === undefined || value === ''
-                              ? '-'
-                              : typeof value === 'object'
-                                ? <pre className="bg-gray-100 rounded p-2 text-xs overflow-x-auto max-w-full whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
-                                : value.toString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              <div className="p-8 bg-gray-50 overflow-y-auto max-h-[calc(90vh-120px)]">
+                {(() => {
+                  const contentType = viewItem.type as string;
+                  const renderer = ContentRenderers[contentType as keyof typeof ContentRenderers] || ContentRenderers.default;
+                  return renderer(viewItem);
+                })()}
               </div>
             </div>
           </div>
