@@ -217,7 +217,7 @@ The article should be comprehensive, informative, and showcase expertise in ${fo
       // Add the current prompt
       data.append('prompt', editablePrompt);
       
-      const response = await fetch('https://priyansu4781.app.n8n.cloud/webhook/content-generate', {
+      const response = await fetch('https://devilblack.app.n8n.cloud/webhook/content-generate', {
         method: 'POST',
         body: data
       });

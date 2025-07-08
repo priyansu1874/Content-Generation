@@ -82,7 +82,7 @@ const InputDetailsForm: React.FC<InputDetailsFormProps> = ({ onSubmit, initialDa
     }
 
     try {
-      const response = await fetch('https://mobiosolutions.app.n8n.cloud/webhook/inputdetails', {
+      const response = await fetch('https://devilblack.app.n8n.cloud/webhook/inputdetails', {
         method: 'POST',
         body: data
       });
