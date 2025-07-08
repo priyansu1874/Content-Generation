@@ -151,7 +151,7 @@ const ContentRepository = () => {
   // Content renderers based on actual database columns - SHOWING ALL COLUMNS
   const ContentRenderers = {
     'Website Blog': (item: Record<string, unknown>) => {
-      // ALL Columns: id, title, Slug, metaTitle, metaDescription, introduction, body, callToAction, Propmt, quote, Tags, generatedContent, conclusion, created_at
+      // ALL Columns: id, title, Slug, metaTitle, metaDescription, introduction, body, callToAction, Propmt, quote, Tags, generatedContent, created_at
       const title = item.title as string;
       const slug = item.Slug as string;
       const metaTitle = item.metaTitle as string;
@@ -163,7 +163,6 @@ const ContentRepository = () => {
       const quote = item.quote as string;
       const tags = item.Tags as string;
       const generatedContent = item.generatedContent as string;
-      const conclusion = item.conclusion as string;
       
       return (
         <div className="space-y-6">
@@ -266,25 +265,6 @@ const ContentRepository = () => {
               <div className="mb-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
                 <h2 className="text-xl font-bold text-orange-800 mb-2">Call to Action</h2>
                 <p className="text-orange-700">{callToAction}</p>
-              </div>
-            )}
-            
-            {conclusion && (
-              <div className="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                <h2 className="text-xl font-bold text-indigo-800 mb-2">Conclusion</h2>
-                <div className="text-indigo-700">
-                  {(() => {
-                    try {
-                      const conclusionContent = JSON.parse(conclusion);
-                      if (typeof conclusionContent === 'object' && conclusionContent !== null) {
-                        return <pre className="whitespace-pre-wrap text-sm bg-white p-3 rounded border">{JSON.stringify(conclusionContent, null, 2)}</pre>;
-                      }
-                      return <p className="leading-relaxed">{conclusionContent}</p>;
-                    } catch {
-                      return <p className="leading-relaxed whitespace-pre-wrap">{conclusion}</p>;
-                    }
-                  })()}
-                </div>
               </div>
             )}
             
