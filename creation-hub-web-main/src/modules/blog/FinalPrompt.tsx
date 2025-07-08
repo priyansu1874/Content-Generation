@@ -149,7 +149,7 @@ const FinalPrompt: React.FC<FinalPromptProps> = ({
     setIsGenerating(true);
     
     try {
-      const res = await fetch('https://priyansu4781.app.n8n.cloud/webhook/83037732-608c-4f27-9b81-04c49daae6d9', {
+      const res = await fetch('https://devilblack.app.n8n.cloud/webhook/blog-content-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, finalPrompt }),

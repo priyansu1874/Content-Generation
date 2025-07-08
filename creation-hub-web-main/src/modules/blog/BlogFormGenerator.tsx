@@ -290,7 +290,7 @@ const BlogFormGenerator = ({ onNext, initialFormData, onBack }: BlogFormGenerato
         toneOfVoice: formData.toneOfVoice === 'custom' ? customToneOfVoice : formData.toneOfVoice,
       };
 
-      const response = await fetch('https://priyansu4781.app.n8n.cloud/webhook/669ff8d0-1c76-4361-a74b-c64accb29d7f', {
+      const response = await fetch('https://devilblack.app.n8n.cloud/webhook/blog-prompt-generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
