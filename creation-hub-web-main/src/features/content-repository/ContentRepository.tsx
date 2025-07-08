@@ -899,29 +899,31 @@ const ContentRepository = () => {
         )}
         {/* Modal for viewing content with type-specific formatting */}
         {viewItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setViewItem(null)}>
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={() => setViewItem(null)}>
             <div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] p-0 relative animate-fade-in border border-gray-200 overflow-hidden"
+              className="bg-white w-full h-full overflow-hidden relative"
               onClick={e => e.stopPropagation()}
             >
               {/* Header Bar */}
-              <div className="flex items-center justify-between px-8 py-6 bg-gradient-to-r from-blue-600 to-cyan-500 border-b border-gray-100">
-                <Heading3 className="text-white text-2xl font-bold">Content Preview</Heading3>
+              <div className="flex items-center justify-between px-12 py-8 bg-gradient-to-r from-blue-600 to-cyan-500 border-b border-gray-100 shadow-lg">
+                <Heading3 className="text-white text-3xl font-bold">Content Preview</Heading3>
                 <button
-                  className="text-white hover:text-gray-200 transition-colors"
+                  className="text-white hover:text-gray-200 transition-colors p-2 rounded-lg hover:bg-white/10"
                   onClick={() => setViewItem(null)}
                   aria-label="Close"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-8 w-8" />
                 </button>
               </div>
               {/* Content Body */}
-              <div className="p-8 bg-gray-50 overflow-y-auto max-h-[calc(90vh-120px)]">
-                {(() => {
-                  const contentType = viewItem.type as string;
-                  const renderer = ContentRenderers[contentType as keyof typeof ContentRenderers] || ContentRenderers.default;
-                  return renderer(viewItem);
-                })()}
+              <div className="p-12 bg-gray-50 overflow-y-auto h-[calc(100vh-120px)]">
+                <div className="max-w-7xl mx-auto">
+                  {(() => {
+                    const contentType = viewItem.type as string;
+                    const renderer = ContentRenderers[contentType as keyof typeof ContentRenderers] || ContentRenderers.default;
+                    return renderer(viewItem);
+                  })()}
+                </div>
               </div>
             </div>
           </div>
